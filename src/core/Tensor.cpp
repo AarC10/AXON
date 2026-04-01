@@ -198,7 +198,26 @@ float& Tensor::operator[](int idx) {
     return (*storage)[offset + idx];
 }
 
+template<typename Operation>
+Tensor Tensor::binary_op(const Tensor& rhs, Operation op) const {
+    auto out_shape = broadcast_shape(shape, rhs.shape);
+    int n = 1;
+    for (int d : out_shape) n *= d;
+
+    Tensor out(out_shape, require_grad || rhs.require_grad);
+    for (int i = 0; i < n; ++i) {
+        int lhs_idx = offset + broadcast_index(i, out_shape, shape);
+        int rhs_idx = rhs.offset + broadcast_index(i, out_shape, rhs.shape);
+        (*out.storage)[i] = op((*storage)[lhs_idx], (*rhs.storage)[rhs_idx]);
+    }
+    return out;
+}
+
 Tensor Tensor::operator+(const Tensor& rhs) const {
+    Tensor result(shape, require_grad || rhs.require_grad);
+    for (int i = 0; i < nelem(); ++i) {
+        (*result.storage)[i] = (*storage)[offset + i] + (*rhs.storage)[rhs.offset + i];
+    }
 }
 
 Tensor Tensor::operator-(const Tensor& rhs) const {
@@ -266,6 +285,27 @@ void Tensor::compute_strides() {
         strides[i] = stride;
         stride *= shape[i];
     }
+}
+
+int Tensor::broadcast_index(int flat, const std::vector<int>& out_shape, const std::vector<int>& in_shape) const {
+    int ndim = out_shape.size();
+    int in_offset = 0;
+    int stride = 1;
+
+    for (int i = ndim - 1; i >= 0; --i) {
+        int out_idx = flat % out_shape[i];
+        flat /= out_shape[i];
+
+        int in_dim = (i >= ndim - in_shape.size())
+                       ? in_shape[i - (ndim - in_shape.size())]
+                       : 1;
+        int in_idx = (in_dim == 1) ? 0 : out_idx;
+
+        in_offset += stride * in_idx;
+        stride *= in_dim;
+    }
+
+    return in_offset;
 }
 
 std::vector<int> Tensor::broadcast_shape(const std::vector<int>& shape_one, const std::vector<int>& shape_two) {

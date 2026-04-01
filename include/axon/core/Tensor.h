@@ -185,6 +185,9 @@ class Tensor {
     // Shape manip
 
     // Arithmetic Ops
+    template<typename Operation>
+    Tensor binary_op(const Tensor& rhs, Operation op) const;
+
     /** @brief Elementwise tensor addition */
     Tensor operator+(const Tensor &rhs) const;
 
@@ -322,6 +325,15 @@ class Tensor {
 
     /** @brief Recomputes strides from the current shape */
     void compute_strides();
+
+    /**
+     * @brief Computes the flat storage index for a broadcasted access
+     * @param flat Flat index into the broadcasted output
+     * @param out_shape Shape of the broadcasted output
+     * @param in_shape Shape of the input tensor being accessed
+     * @return Flat index into the input tensor's storage corresponding to the broadcasted access
+     */
+    int broadcast_index(int flat, const std::vector<int>& out_shape, const std::vector<int>& in_shape) const;
 
     /**
      * @brief Computes broadcasted shape for two input shapes
