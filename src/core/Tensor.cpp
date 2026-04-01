@@ -131,36 +131,78 @@ const std::vector<int>& Tensor::get_strides() const {
 }
 
 int Tensor::ndim() const {
-
+    return static_cast<int>(shape.size());
 }
 
 int Tensor::nelem() const {
-
+    int n = 1;
+    for (int d : shape) n *= d;
+    return n;
 }
 
-int Tensor::size(int dim) const {}
+int Tensor::size(int dim) const {
+    // neg index edge case
+    if (dim < 0) {
+        dim += static_cast<int>(shape.size());
+    }
 
-bool Tensor::requires_grad() const {}
+    if (dim < 0 || dim >= shape.size()) {
+        throw std::out_of_range("Dimension out of range");
+    }
 
-bool Tensor::set_requires_grad(bool require_grad) {}
+    return shape[dim];
+}
 
-bool Tensor::is_contiguous() {}
+bool Tensor::requires_grad() const {
+    return require_grad;
+}
 
-float* Tensor::data() {}
+bool Tensor::set_requires_grad(bool require_grad) {
+    this->require_grad = require_grad;
+}
 
-const float* Tensor::data() const {}
+bool Tensor::is_contiguous() {
+    int stride = 1;
+    for (int i = static_cast<int>(shape.size()) - 1; i >= 0; --i) {
+        if (strides[i] != stride) {
+            return false;
+        }
+        stride *= shape[i];
+    }
+    return true;
+}
 
-float Tensor::at(const std::vector<int>& idx) const {}
+float* Tensor::data() {
+    return storage->data() + offset;
+}
 
-float& Tensor::at(const std::vector<int>& idx) {}
+const float* Tensor::data() const {
+    return storage->data() + offset;
+}
 
-float Tensor::operator[](int idx) const {}
+float Tensor::at(const std::vector<int>& idx) const {
+    int flat_idx = flat_idnex(idx);
+    return (*storage)[offset + flat_idx];
+}
 
-float& Tensor::operator[](int idx) {}
+float& Tensor::at(const std::vector<int>& idx) {
+    int flat_idx = flat_idnex(idx);
+    return (*storage)[offset + flat_idx];
+}
 
-Tensor Tensor::operator+(const Tensor& rhs) const {}
+float Tensor::operator[](int idx) const {
+    return (*storage)[offset + idx];
+}
 
-Tensor Tensor::operator-(const Tensor& rhs) const {}
+float& Tensor::operator[](int idx) {
+    return (*storage)[offset + idx];
+}
+
+Tensor Tensor::operator+(const Tensor& rhs) const {
+}
+
+Tensor Tensor::operator-(const Tensor& rhs) const {
+}
 
 Tensor Tensor::operator*(const Tensor& rhs) const {}
 
@@ -205,7 +247,16 @@ Tensor Tensor::operator<(const Tensor& rhs) const {}
 Tensor Tensor::operator<=(const Tensor& rhs) const {}
 Tensor Tensor::operator>(const Tensor& rhs) const {}
 Tensor Tensor::operator>=(const Tensor& rhs) const {}
-int Tensor::flat_idnex(const std::vector<int>& idx) const {}
+
+int Tensor::flat_idnex(const std::vector<int>& idx) const {
+    int flat = offset;
+
+    for (int i = 0; i < idx.size(); i++) {
+        flat += idx[i] * strides[i];
+    }
+
+    return flat;
+}
 
 void Tensor::compute_strides() {
     strides.resize(shape.size());
@@ -217,4 +268,25 @@ void Tensor::compute_strides() {
     }
 }
 
-std::vector<int> Tensor::broadcast_shape(const std::vector<int>& shape_one, const std::vector<int>& shape_two) {}
+std::vector<int> Tensor::broadcast_shape(const std::vector<int>& shape_one, const std::vector<int>& shape_two) {
+    int ndim = std::max(shape_one.size(), shape_two.size());
+    std::vector<int> broadcasted_shape(ndim);
+
+    for (int i = 0; i < ndim; i++) {
+        int shape_one_dim = i < shape_one.size() ? shape_one[shape_one.size() - 1 - i] : 1;
+        int shape_two_dim = i < shape_two.size() ? shape_two[shape_two.size() - 1 - i] : 1;
+
+        if (shape_one_dim == shape_two_dim) {
+            broadcasted_shape[ndim - 1 - i] = shape_one_dim;
+        } else if (shape_one_dim > shape_two_dim) {
+            broadcasted_shape[ndim - 1 - i] = shape_two_dim;
+        } else if (shape_one_dim < shape_two_dim) {
+            broadcasted_shape[ndim - 1 - i] = shape_one_dim;
+        } else {
+            // Shouldnt happen tho
+            throw std::out_of_range("Dimension out of range" + std::to_string(shape_one_dim) + " " + std::to_string(shape_two_dim));
+        }
+    }
+
+    return broadcasted_shape;
+}
