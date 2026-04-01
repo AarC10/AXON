@@ -1,23 +1,62 @@
 #include "core/Tensor.h"
 
 Tensor::Tensor(std::vector<int> shape, bool requires_grad)
-    : shape(shape),
-      require_grad(requires_grad),
-      is_leaf(true),
-      offset(0) {
+    : shape(shape), require_grad(requires_grad), is_leaf(true), offset(0) {
     int n = 1;
     for (int d : shape) n *= d;
     storage = std::make_shared<std::vector<float>>(n, 0.0f);
     compute_strides();
 }
 
+Tensor::Tensor(std::vector<float> data, std::vector<int> shape, bool require_grad)
+    : shape(shape), require_grad(require_grad), is_leaf(true), offset(0) {
+    int n = 1;
+    for (int d : shape) n *= d;
 
-Tensor::Tensor(std::vector<int> shape, bool require_grad) {}
-Tensor::Tensor(std::vector<float> data, std::vector<int> shape, bool require_grad) {}
-Tensor::Tensor(const Tensor& other) {}
-Tensor::Tensor(Tensor&& other) {}
-Tensor& Tensor::operator=(const Tensor& other) {}
-Tensor& Tensor::operator=(Tensor&& other) {}
+    if (data.size() != n) {
+        throw std::invalid_argument("Data size doesnt match shape");
+    }
+
+    storage = std::make_shared<std::vector<float>>(n, 0.0f);
+    compute_strides();
+}
+
+Tensor::Tensor(const Tensor& other)
+    : storage(std::make_shared<std::vector<float>>(*other.storage)), offset(other.offset), shape(other.shape),
+      strides(other.strides), require_grad(other.require_grad), is_leaf(other.is_leaf), grad(other.grad),
+      inputs(other.inputs) {}
+
+Tensor::Tensor(Tensor&& other)
+    : storage(std::move(other.storage)), offset(other.offset), shape(std::move(other.shape)),
+      strides(std::move(other.strides)), require_grad(other.require_grad), is_leaf(other.is_leaf),
+      grad(std::move(other.grad)), inputs(std::move(other.inputs)) {}
+
+Tensor& Tensor::operator=(const Tensor& other) {
+    if (this == &other) return *this;
+    storage = std::make_shared<std::vector<float>>(*other.storage);
+    offset = other.offset;
+    shape = other.shape;
+    strides = other.strides;
+    require_grad = other.require_grad;
+    is_leaf = other.is_leaf;
+    grad = other.grad;
+    inputs = other.inputs;
+    return *this;
+}
+
+Tensor& Tensor::operator=(Tensor&& other) {
+    if (this == &other) return *this;
+    storage = std::move(other.storage);
+    offset = other.offset;
+    shape = std::move(other.shape);
+    strides = std::move(other.strides);
+    require_grad = other.require_grad;
+    is_leaf = other.is_leaf;
+    grad = std::move(other.grad);
+    inputs = std::move(other.inputs);
+    return *this;
+}
+
 Tensor Tensor::zeros(std::vector<int> shape, bool require_grad) {}
 Tensor Tensor::ones(std::vector<int> shape, bool require_grad) {}
 Tensor Tensor::full(std::vector<int> shape, bool require_grad) {}
@@ -53,21 +92,13 @@ Tensor& Tensor::operator-=(const Tensor& rhs) {}
 Tensor& Tensor::operator*=(const Tensor& rhs) {}
 Tensor& Tensor::operator/=(const Tensor& rhs) {}
 
-Tensor operator+(float scalar, const Tensor& tensor) {
-    return scalar += tensor;
-}
+Tensor operator+(float scalar, const Tensor& tensor) { return scalar += tensor; }
 
-Tensor operator-(float scalar, const Tensor& tensor) {
-    return scalar -= tensor;
-}
+Tensor operator-(float scalar, const Tensor& tensor) { return scalar -= tensor; }
 
-Tensor operator*(float scalar, const Tensor& tensor) {
-    return scalar *= tensor;
-}
+Tensor operator*(float scalar, const Tensor& tensor) { return scalar *= tensor; }
 
-Tensor operator/(float scalar, const Tensor& tensor) {
-    return scalar /= tensor;
-}
+Tensor operator/(float scalar, const Tensor& tensor) { return scalar /= tensor; }
 
 Tensor Tensor::exp() const {}
 Tensor Tensor::log() const {}
