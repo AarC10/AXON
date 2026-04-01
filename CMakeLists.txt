@@ -34,6 +34,11 @@ if(AXON_ENABLE_OPENMP)
   find_package(OpenMP REQUIRED)
 endif()
 
+# Include directories
+include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/axon
+)
+
 # Subdirectories
 add_subdirectory(src/core)
 add_subdirectory(src/nn)
