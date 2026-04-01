@@ -4,7 +4,7 @@
 #include <random>
 
 Tensor::Tensor(const std::vector<int>& shape, bool requires_grad)
-    : shape(shape), require_grad(requires_grad), is_leaf(true), offset(0) {
+    : offset(0), shape(shape), require_grad(requires_grad), is_leaf(true) {
     int n = 1;
     for (int d : shape) n *= d;
     storage = std::make_shared<std::vector<float>>(n, 0.0f);
@@ -12,7 +12,7 @@ Tensor::Tensor(const std::vector<int>& shape, bool requires_grad)
 }
 
 Tensor::Tensor(const std::vector<float>& data, const std::vector<int>& shape, bool require_grad)
-    : shape(shape), require_grad(require_grad), is_leaf(true), offset(0) {
+    : offset(0), shape(shape), require_grad(require_grad), is_leaf(true) {
     int n = 1;
     for (const int d : shape) n *= d;
 
@@ -524,6 +524,13 @@ Tensor Tensor::operator>=(const Tensor& rhs) const {
     return binary_op(rhs, [](const float a, const float b) { return a >= b ? 1.0f : 0.0f; });
 }
 
+void Tensor::set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<Tensor>>& inputs) {
+    this->gradient_func = func;
+    this->inputs = inputs;
+}
+
+bool Tensor::get_is_leaf() const { return is_leaf; }
+
 int Tensor::flat_index(const std::vector<int>& idx) const {
     int flat = offset;
 
@@ -580,16 +587,9 @@ std::vector<int> Tensor::broadcast_shape(const std::vector<int>& shape_one, cons
         } else {
             // Shouldnt happen tho
             throw std::out_of_range("Dimension out of range" + std::to_string(shape_one_dim) + " " +
-                                    std::to_string(shape_two_dim));
+                std::to_string(shape_two_dim));
         }
     }
 
     return broadcasted_shape;
 }
-
-void Tensor::set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<Tensor>>& inputs) {
-    this->gradient_func = func;
-    this->inputs = inputs;
-}
-
-bool Tensor::get_is_leaf() const { return is_leaf; }
