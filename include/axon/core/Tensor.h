@@ -24,6 +24,8 @@ public:
 
     ~Tensor() = default;
 
+    // Static Factories
+
     /**
      * @brief Creates tensor filled with zeros
      * @param shape Dimensions of the tensor
@@ -81,6 +83,31 @@ public:
      * @return A 1D tensor containing the generated range
      */
     static Tensor arange(float start, float stop, float step = 1.0f, bool require_grad = false);
+
+    // Data Access
+
+
+    // Shape manip
+
+    // Arithmetic Ops
+
+    // COmparison ops
+
+    // Elementwise maffs
+
+    // ACtivation functions
+
+    // Reduction Ops
+
+    // LinAlg
+
+    // Autograd
+
+    // Utils
+
+
+
+
 
 private:
     std::shared_ptr<std::vector<float>> data;
