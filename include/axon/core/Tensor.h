@@ -86,8 +86,8 @@ class Tensor {
     static Tensor arange(float start, float stop, float step = 1.0f, bool require_grad = false);
 
     // Shape
-    const std::vector<int> &shape() const;
-    const std::vector<int> &strides() const;
+    const std::vector<int> &get_shape() const;
+    const std::vector<int> &get_strides() const;
     int ndim() const;
     int nelem() const;
     int size() const;
@@ -157,7 +157,7 @@ class Tensor {
     // Utils
 
   private:
-    std::shared_ptr<std::vector<float>> data;
+    std::shared_ptr<std::vector<float>> storage;
     int offset = 0;
 
     std::vector<int> shape;
