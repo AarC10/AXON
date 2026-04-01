@@ -362,7 +362,28 @@ Tensor operator/(float scalar, const Tensor& tensor) {
 }
 
 Tensor Tensor::exp() const {
+    Tensor out(shape, require_grad);
+
+    for (int i = 0; i < nelem(); ++i) {
+        (*out.storage)[i] = std::exp((*out.storage)[i + offset]);
+    }
+
+    if (require_grad) {
+        auto self = std::make_shared<Tensor>(*this);
+        auto out_ptr = std::make_shared<Tensor>(out);
+
+        out.inputs = {self};
+        out.is_leaf = false;
+        out.gradient_func = [self, out_ptr](const Tensor& grad) {
+            // d/dx exp(x) = exp(x)
+            Tensor lhs_grad = grad * *out_ptr;
+            self->grad = std::make_shared<Tensor>(self->grad ? *self->grad + lhs_grad : lhs_grad);
+        };
+    }
+
+    return out;
 }
+
 Tensor Tensor::log() const {}
 Tensor Tensor::sqrt() const {}
 Tensor Tensor::abs() const {}
