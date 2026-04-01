@@ -165,12 +165,12 @@ float* Tensor::data() { return storage->data() + offset; }
 const float* Tensor::data() const { return storage->data() + offset; }
 
 float Tensor::at(const std::vector<int>& idx) const {
-    int flat_idx = flat_idnex(idx);
+    int flat_idx = flat_index(idx);
     return (*storage)[offset + flat_idx];
 }
 
 float& Tensor::at(const std::vector<int>& idx) {
-    int flat_idx = flat_idnex(idx);
+    int flat_idx = flat_index(idx);
     return (*storage)[offset + flat_idx];
 }
 
@@ -345,15 +345,24 @@ Tensor& Tensor::operator/=(const Tensor& rhs) {
     return *this;
 }
 
-Tensor operator+(float scalar, const Tensor& tensor) { return scalar += tensor; }
+Tensor operator+(float scalar, const Tensor& tensor) {
+    return tensor + scalar;
+}
 
-Tensor operator-(float scalar, const Tensor& tensor) { return scalar -= tensor; }
+Tensor operator-(float scalar, const Tensor& tensor) {
+    return Tensor::full(tensor.shape, scalar) - tensor;
+}
 
-Tensor operator*(float scalar, const Tensor& tensor) { return scalar *= tensor; }
+Tensor operator*(float scalar, const Tensor& tensor) {
+    return tensor * scalar;
+}
 
-Tensor operator/(float scalar, const Tensor& tensor) { return scalar /= tensor; }
+Tensor operator/(float scalar, const Tensor& tensor) {
+    return Tensor::full(tensor.shape, scalar) / tensor;
+}
 
-Tensor Tensor::exp() const {}
+Tensor Tensor::exp() const {
+}
 Tensor Tensor::log() const {}
 Tensor Tensor::sqrt() const {}
 Tensor Tensor::abs() const {}
@@ -367,7 +376,7 @@ Tensor Tensor::operator<=(const Tensor& rhs) const {}
 Tensor Tensor::operator>(const Tensor& rhs) const {}
 Tensor Tensor::operator>=(const Tensor& rhs) const {}
 
-int Tensor::flat_idnex(const std::vector<int>& idx) const {
+int Tensor::flat_index(const std::vector<int>& idx) const {
     int flat = offset;
 
     for (int i = 0; i < idx.size(); i++) {

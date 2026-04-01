@@ -23,7 +23,7 @@ class Tensor {
      * @param shape Dimensions of the tensor
      * @param require_grad Whether gradients should be tracked
      */
-    Tensor(const std::vector<float>& data, const std::vector<int>& shape, bool require_grad = false);
+    Tensor(const std::vector<float>& data, std::vector<int>& shape, bool require_grad = false);
 
     /**
      * @brief Copy-constructs a tensor
@@ -330,7 +330,7 @@ class Tensor {
      * @param idx Per-dimension index
      * @return Flat index into storage
      */
-    int flat_idnex(const std::vector<int> &idx) const;
+    int flat_index(const std::vector<int> &idx) const;
 
     /** @brief Recomputes strides from the current shape */
     void compute_strides();
