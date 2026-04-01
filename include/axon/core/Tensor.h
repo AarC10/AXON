@@ -141,9 +141,8 @@ class Tensor {
     /**
      * @brief Enables or disables gradient tracking
      * @param require_grad New gradient tracking flag
-     * @return True if the flag was applied
      */
-    bool set_requires_grad(bool require_grad);
+    void set_requires_grad(bool require_grad);
 
     /** @brief Returns true when storage layout is contiguous */
     bool is_contiguous();

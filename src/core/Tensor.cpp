@@ -150,7 +150,9 @@ int Tensor::size(int dim) const {
 
 bool Tensor::requires_grad() const { return require_grad; }
 
-bool Tensor::set_requires_grad(bool require_grad) { this->require_grad = require_grad; }
+void Tensor::set_requires_grad(const bool require_grad) {
+    this->require_grad = require_grad;
+}
 
 bool Tensor::is_contiguous() {
     int stride = 1;
@@ -405,6 +407,8 @@ Tensor Tensor::sqrt() const {
             self->grad = std::make_shared<Tensor>(self->grad ? *self->grad + lhs_grad : lhs_grad);
         };
     }
+
+    return out;
 }
 Tensor Tensor::abs() const {
     Tensor out(shape, require_grad);
