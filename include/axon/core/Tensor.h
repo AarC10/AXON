@@ -303,7 +303,7 @@ class Tensor {
     int offset = 0;
 
     std::vector<int> shape;
-    std::vector<int> stride;
+    std::vector<int> strides;
 
     bool require_grad;
     bool is_leaf = true;
