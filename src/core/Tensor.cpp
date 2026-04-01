@@ -1,5 +1,7 @@
 #include "core/Tensor.h"
 
+#include <random>
+
 Tensor::Tensor(std::vector<int> shape, bool requires_grad)
     : shape(shape), require_grad(requires_grad), is_leaf(true), offset(0) {
     int n = 1;
@@ -11,7 +13,7 @@ Tensor::Tensor(std::vector<int> shape, bool requires_grad)
 Tensor::Tensor(std::vector<float> data, std::vector<int> shape, bool require_grad)
     : shape(shape), require_grad(require_grad), is_leaf(true), offset(0) {
     int n = 1;
-    for (int d : shape) n *= d;
+    for (const int d : shape) n *= d;
 
     if (data.size() != n) {
         throw std::invalid_argument("Data size doesnt match shape");
@@ -57,39 +59,129 @@ Tensor& Tensor::operator=(Tensor&& other) {
     return *this;
 }
 
-Tensor Tensor::zeros(std::vector<int> shape, bool require_grad) {}
-Tensor Tensor::ones(std::vector<int> shape, bool require_grad) {}
-Tensor Tensor::full(std::vector<int> shape, bool require_grad) {}
-Tensor Tensor::randn(std::vector<int> shape, bool require_grad) {}
-Tensor Tensor::rand(std::vector<int> shape, bool require_grad) {}
-Tensor Tensor::eye(int n, bool require_grad) {}
-Tensor Tensor::arange(float start, float stop, float step, bool require_grad) {}
-const std::vector<int>& Tensor::get_shape() const {}
-const std::vector<int>& Tensor::get_strides() const {}
-int Tensor::ndim() const {}
-int Tensor::nelem() const {}
+Tensor Tensor::zeros(std::vector<int>& shape, bool require_grad) {
+    // Zero inited in ctor
+    return Tensor(shape, require_grad);
+}
+
+Tensor Tensor::ones(std::vector<int>& shape, bool require_grad) {
+    return Tensor::full(shape, 1.0f, require_grad);
+}
+
+Tensor Tensor::full(std::vector<int>& shape, float value, bool requires_grad) {
+    Tensor tensor(shape, requires_grad);
+    std::fill(tensor.storage->begin(), tensor.storage->end(), value);
+    return tensor;
+}
+
+Tensor Tensor::randn(std::vector<int>& shape, bool require_grad) {
+    static std::mt19937 gen(std::random_device{}());
+    std::normal_distribution<float> dis(0.0f, 1.0f);
+
+    Tensor tensor(shape, require_grad);
+
+    for (float& x : *tensor.storage) {
+        x = dis(gen);
+    }
+
+    return tensor;
+}
+
+Tensor Tensor::rand(std::vector<int>& shape, bool require_grad) {
+    static std::mt19937 gen(std::random_device{}());
+    std::normal_distribution<float> dis(0.0f, 1.0f);
+
+    Tensor tensor(shape, require_grad);
+
+    for (float& x : *tensor.storage) {
+        x = dis(gen);
+    }
+
+    return tensor;
+}
+
+Tensor Tensor::eye(int n, bool require_grad) {
+    Tensor tensor({n, n}, require_grad);
+    for (int i = 0; i < n; ++i) {
+        (*tensor.storage)[i * n + i] = 1.0f;
+    }
+    return tensor;
+}
+
+Tensor Tensor::arange(float start, float stop, float step, bool require_grad) {
+    if (step == 0.0f) {
+        throw std::invalid_argument("Step must be non-zero");
+    }
+
+    int n = static_cast<int>(std::ceil((stop - start) / step));
+    Tensor tensor({n, n}, require_grad);
+    for (int i = 0; i < n; ++i) {
+        (*tensor.storage)[i] = start + i * step;
+    }
+
+    return tensor;
+}
+
+const std::vector<int>& Tensor::get_shape() const {
+    return shape;
+}
+
+const std::vector<int>& Tensor::get_strides() const {
+    return strides;
+}
+
+int Tensor::ndim() const {
+
+}
+
+int Tensor::nelem() const {
+
+}
+
 int Tensor::size(int dim) const {}
+
 bool Tensor::requires_grad() const {}
+
 bool Tensor::set_requires_grad(bool require_grad) {}
+
 bool Tensor::is_contiguous() {}
+
 float* Tensor::data() {}
+
 const float* Tensor::data() const {}
+
 float Tensor::at(const std::vector<int>& idx) const {}
+
 float& Tensor::at(const std::vector<int>& idx) {}
+
 float Tensor::operator[](int idx) const {}
+
 float& Tensor::operator[](int idx) {}
+
 Tensor Tensor::operator+(const Tensor& rhs) const {}
+
 Tensor Tensor::operator-(const Tensor& rhs) const {}
+
 Tensor Tensor::operator*(const Tensor& rhs) const {}
+
 Tensor Tensor::operator/(const Tensor& rhs) const {}
+
 Tensor Tensor::operator-() const {}
+
 Tensor Tensor::operator+(float scalar) const {}
+
 Tensor Tensor::operator-(float scalar) const {}
+
 Tensor Tensor::operator*(float scalar) const {}
+
 Tensor Tensor::operator/(float scalar) const {}
+
 Tensor& Tensor::operator+=(const Tensor& rhs) {}
+
 Tensor& Tensor::operator-=(const Tensor& rhs) {}
+
 Tensor& Tensor::operator*=(const Tensor& rhs) {}
+
 Tensor& Tensor::operator/=(const Tensor& rhs) {}
 
 Tensor operator+(float scalar, const Tensor& tensor) { return scalar += tensor; }

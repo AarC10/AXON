@@ -61,7 +61,7 @@ class Tensor {
      * @param require_grad Whether to track gradients for this tensor
      * @return A zero-initialized tensor with the requested shape
      */
-    static Tensor zeros(std::vector<int> shape, bool require_grad = false);
+    static Tensor zeros(std::vector<int>& shape, bool require_grad = false);
 
     /**
      * @brief Creates a tensor filled with ones
@@ -69,15 +69,16 @@ class Tensor {
      * @param require_grad Whether to track gradients for this tensor
      * @return A one-initialized tensor with the requested shape
      */
-    static Tensor ones(std::vector<int> shape, bool require_grad = false);
+    static Tensor ones(std::vector<int>& shape, bool require_grad = false);
 
     /**
-     * @brief Creates a tensor filled with a uniform default value
+     * @brief Creates a tensor filled with a value
      * @param shape Dimensions of the tensor
+     * @param value Value to fill the tensor with
      * @param require_grad Whether to track gradients for this tensor
      * @return A uniformly initialized tensor with the requested shape
      */
-    static Tensor full(std::vector<int> shape, bool require_grad = false);
+    static Tensor full(std::vector<int>& shape, float value, bool require_grad = false);
 
     /**
      * @brief Creates a tensor with values sampled from a normal distribution
@@ -85,7 +86,7 @@ class Tensor {
      * @param require_grad Whether to track gradients for this tensor
      * @return A randomly initialized tensor sampled from a normal distribution
      */
-    static Tensor randn(std::vector<int> shape, bool require_grad = false);
+    static Tensor randn(std::vector<int>& shape, bool require_grad = false);
 
     /**
      * @brief Creates a tensor with values sampled from a uniform distribution
@@ -93,7 +94,7 @@ class Tensor {
      * @param require_grad Whether to track gradients for this tensor
      * @return A randomly initialized tensor sampled from a uniform distribution
      */
-    static Tensor rand(std::vector<int> shape, bool require_grad = false);
+    static Tensor rand(std::vector<int>& shape, bool require_grad = false);
 
     /**
      * @brief Creates an identity matrix tensor of size n x n
