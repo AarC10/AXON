@@ -1,5 +1,6 @@
 #ifndef AXON_TENSOR_H
 #define AXON_TENSOR_H
+#include <memory>
 #include <vector>
 
 class Tensor {
@@ -82,8 +83,27 @@ public:
     static Tensor arange(float start, float stop, float step = 1.0f, bool require_grad = false);
 
 private:
+    std::shared_ptr<std::vector<float>> data;
+    int offset = 0;
+
+    std::vector<int> shape;
+    std::vector<int> stride;
+
+    bool require_grad;
+    bool is_leaf = true;
 
 
+    std::shared_ptr<Tensor> grad;
+
+
+    std::vector<std::shared_ptr<Tensor>> inputs;
+
+
+    int flat_idnex(const std::vector<int>& idx) const;
+
+    void compute_strides();
+
+    static std::vector<int> broadcast_shape(const std::vector<int>& shape_one, const std::vector<int>& shape_two);
 };
 
 
