@@ -2,7 +2,6 @@
 #define AXON_TENSOR_H
 #include <functional>
 #include <memory>
-#include <optional>
 #include <vector>
 
 class Tensor {
@@ -15,7 +14,7 @@ class Tensor {
      * @param shape Dimensions of the tensor
      * @param require_grad Whether gradients should be tracked
      */
-    explicit Tensor(const std::vector<int>& shape, bool require_grad = false);
+    explicit Tensor(const std::vector<int> &shape, bool require_grad = false);
 
     /**
      * @brief Constructs a tensor from existing data and shape
@@ -23,7 +22,7 @@ class Tensor {
      * @param shape Dimensions of the tensor
      * @param require_grad Whether gradients should be tracked
      */
-    Tensor(const std::vector<float>& data, const std::vector<int>& shape, bool require_grad = false);
+    Tensor(const std::vector<float> &data, const std::vector<int> &shape, bool require_grad = false);
 
     /**
      * @brief Copy-constructs a tensor
@@ -62,7 +61,7 @@ class Tensor {
      * @param require_grad Whether to track gradients for this tensor
      * @return A zero-initialized tensor with the requested shape
      */
-    static Tensor zeros(const std::vector<int>& shape, bool require_grad = false);
+    static Tensor zeros(const std::vector<int> &shape, bool require_grad = false);
 
     /**
      * @brief Creates a tensor filled with ones
@@ -70,7 +69,7 @@ class Tensor {
      * @param require_grad Whether to track gradients for this tensor
      * @return A one-initialized tensor with the requested shape
      */
-    static Tensor ones(const std::vector<int>& shape, bool require_grad = false);
+    static Tensor ones(const std::vector<int> &shape, bool require_grad = false);
 
     /**
      * @brief Creates a tensor filled with a value
@@ -79,7 +78,7 @@ class Tensor {
      * @param require_grad Whether to track gradients for this tensor
      * @return A uniformly initialized tensor with the requested shape
      */
-    static Tensor full(const std::vector<int>& shape, float value, bool require_grad = false);
+    static Tensor full(const std::vector<int> &shape, float value, bool require_grad = false);
 
     /**
      * @brief Creates a tensor with values sampled from a normal distribution
@@ -87,7 +86,7 @@ class Tensor {
      * @param require_grad Whether to track gradients for this tensor
      * @return A randomly initialized tensor sampled from a normal distribution
      */
-    static Tensor randn(const std::vector<int>& shape, bool require_grad = false);
+    static Tensor randn(const std::vector<int> &shape, bool require_grad = false);
 
     /**
      * @brief Creates a tensor with values sampled from a uniform distribution
@@ -95,7 +94,7 @@ class Tensor {
      * @param require_grad Whether to track gradients for this tensor
      * @return A randomly initialized tensor sampled from a uniform distribution
      */
-    static Tensor rand(const std::vector<int>& shape, bool require_grad = false);
+    static Tensor rand(const std::vector<int> &shape, bool require_grad = false);
 
     /**
      * @brief Creates an identity matrix tensor of size n x n
@@ -185,8 +184,8 @@ class Tensor {
     // Shape manip
 
     // Arithmetic Ops
-    template<typename Operation>
-    Tensor binary_op(const Tensor& rhs, Operation op) const;
+    template <typename Operation>
+    Tensor binary_op(const Tensor &rhs, Operation op) const;
 
     /** @brief Elementwise tensor addition */
     Tensor operator+(const Tensor &rhs) const;
@@ -275,22 +274,22 @@ class Tensor {
 
     // COmparison ops
     /** @brief Elementwise equality comparison */
-    Tensor operator==(const Tensor& rhs) const;
+    Tensor operator==(const Tensor &rhs) const;
 
     /** @brief Elementwise inequality comparison */
-    Tensor operator!=(const Tensor& rhs) const;
+    Tensor operator!=(const Tensor &rhs) const;
 
     /** @brief Elementwise LT comparison */
-    Tensor operator< (const Tensor& rhs) const;
+    Tensor operator<(const Tensor &rhs) const;
 
     /** @brief Elementwise LTE comparison */
-    Tensor operator<=(const Tensor& rhs) const;
+    Tensor operator<=(const Tensor &rhs) const;
 
     /** @brief Elementwise GT comparison */
-    Tensor operator> (const Tensor& rhs) const;
+    Tensor operator>(const Tensor &rhs) const;
 
     /** @brief Elementwise GTE comparison */
-    Tensor operator>=(const Tensor& rhs) const;
+    Tensor operator>=(const Tensor &rhs) const;
 
     // ACtivation functions
 
@@ -303,9 +302,9 @@ class Tensor {
     // Utils
 
     // Autograd handling
-    using GradientFunc = std::function<void(const Tensor&)>;
+    using GradientFunc = std::function<void(const Tensor &)>;
 
-    void set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<Tensor>>& inputs);
+    void set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<Tensor>> &inputs);
 
     bool get_is_leaf() const;
 
@@ -341,7 +340,7 @@ class Tensor {
      * @param in_shape Shape of the input tensor being accessed
      * @return Flat index into the input tensor's storage corresponding to the broadcasted access
      */
-    int broadcast_index(int flat, const std::vector<int>& out_shape, const std::vector<int>& in_shape) const;
+    int broadcast_index(int flat, const std::vector<int> &out_shape, const std::vector<int> &in_shape) const;
 
     /**
      * @brief Computes broadcasted shape for two input shapes

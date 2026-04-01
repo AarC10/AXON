@@ -150,9 +150,7 @@ int Tensor::size(int dim) const {
 
 bool Tensor::requires_grad() const { return require_grad; }
 
-void Tensor::set_requires_grad(const bool require_grad) {
-    this->require_grad = require_grad;
-}
+void Tensor::set_requires_grad(const bool require_grad) { this->require_grad = require_grad; }
 
 bool Tensor::is_contiguous() {
     int stride = 1;
@@ -587,7 +585,7 @@ std::vector<int> Tensor::broadcast_shape(const std::vector<int>& shape_one, cons
         } else {
             // Shouldnt happen tho
             throw std::out_of_range("Dimension out of range" + std::to_string(shape_one_dim) + " " +
-                std::to_string(shape_two_dim));
+                                    std::to_string(shape_two_dim));
         }
     }
 

@@ -6,8 +6,8 @@
  */
 class StochasticGradientDescent {
   public:
-	/** @brief Constructs an SGD optimizer instance */
-	StochasticGradientDescent() = default;
+    /** @brief Constructs an SGD optimizer instance */
+    StochasticGradientDescent() = default;
 };
 
 #endif // AXON_STOCHASTICGRADIENTDESCENT_H
