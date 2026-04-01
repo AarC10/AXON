@@ -23,7 +23,7 @@ class Tensor {
      * @param shape Dimensions of the tensor
      * @param require_grad Whether gradients should be tracked
      */
-    Tensor(const std::vector<float>& data, std::vector<int>& shape, bool require_grad = false);
+    Tensor(const std::vector<float>& data, const std::vector<int>& shape, bool require_grad = false);
 
     /**
      * @brief Copy-constructs a tensor
