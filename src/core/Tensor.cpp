@@ -449,7 +449,7 @@ Tensor Tensor::pow(float exponent) const {
 }
 
 Tensor Tensor::pow(const Tensor& exp) const {
-    Tensor out = binary_op(exp, [](float a, float b) { return std::pow(a, b); });
+    Tensor out = binary_op(exp, [](const float a, const float b) { return std::pow(a, b); });
 
     if (out.require_grad) {
         auto self = std::make_shared<Tensor>(*this);
@@ -495,12 +495,30 @@ Tensor Tensor::clip(float min, float max) const {
 
     return out;
 }
-Tensor Tensor::operator==(const Tensor& rhs) const {}
-Tensor Tensor::operator!=(const Tensor& rhs) const {}
-Tensor Tensor::operator<(const Tensor& rhs) const {}
-Tensor Tensor::operator<=(const Tensor& rhs) const {}
-Tensor Tensor::operator>(const Tensor& rhs) const {}
-Tensor Tensor::operator>=(const Tensor& rhs) const {}
+
+Tensor Tensor::operator==(const Tensor& rhs) const {
+    return binary_op(rhs, [](const float a, const float b) { return a == b ? 1.0f : 0.0f; });
+}
+
+Tensor Tensor::operator!=(const Tensor& rhs) const {
+    return binary_op(rhs, [](const float a, const float b) { return a != b ? 1.0f : 0.0f; });
+}
+
+Tensor Tensor::operator<(const Tensor& rhs) const {
+    return binary_op(rhs, [](const float a, const float b) { return a < b ? 1.0f : 0.0f; });
+}
+
+Tensor Tensor::operator<=(const Tensor& rhs) const {
+    return binary_op(rhs, [](const float a, const float b) { return a <= b ? 1.0f : 0.0f; });
+}
+
+Tensor Tensor::operator>(const Tensor& rhs) const {
+    return binary_op(rhs, [](const float a, const float b) { return a > b ? 1.0f : 0.0f; });
+}
+
+Tensor Tensor::operator>=(const Tensor& rhs) const {
+    return binary_op(rhs, [](const float a, const float b) { return a >= b ? 1.0f : 0.0f; });
+}
 
 int Tensor::flat_index(const std::vector<int>& idx) const {
     int flat = offset;
