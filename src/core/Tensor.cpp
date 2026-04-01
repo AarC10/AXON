@@ -2,7 +2,7 @@
 
 #include <random>
 
-Tensor::Tensor(std::vector<int> shape, bool requires_grad)
+Tensor::Tensor(const std::vector<int>& shape, bool requires_grad)
     : shape(shape), require_grad(requires_grad), is_leaf(true), offset(0) {
     int n = 1;
     for (int d : shape) n *= d;
@@ -10,7 +10,7 @@ Tensor::Tensor(std::vector<int> shape, bool requires_grad)
     compute_strides();
 }
 
-Tensor::Tensor(std::vector<float> data, std::vector<int> shape, bool require_grad)
+Tensor::Tensor(const std::vector<float>& data, const std::vector<int>& shape, bool require_grad)
     : shape(shape), require_grad(require_grad), is_leaf(true), offset(0) {
     int n = 1;
     for (const int d : shape) n *= d;
@@ -59,20 +59,20 @@ Tensor& Tensor::operator=(Tensor&& other) {
     return *this;
 }
 
-Tensor Tensor::zeros(std::vector<int>& shape, bool require_grad) {
+Tensor Tensor::zeros(const std::vector<int>& shape, bool require_grad) {
     // Zero inited in ctor
     return Tensor(shape, require_grad);
 }
 
-Tensor Tensor::ones(std::vector<int>& shape, bool require_grad) { return Tensor::full(shape, 1.0f, require_grad); }
+Tensor Tensor::ones(const std::vector<int>& shape, bool require_grad) { return Tensor::full(shape, 1.0f, require_grad); }
 
-Tensor Tensor::full(std::vector<int>& shape, float value, bool requires_grad) {
+Tensor Tensor::full(const std::vector<int>& shape, float value, bool requires_grad) {
     Tensor tensor(shape, requires_grad);
     std::fill(tensor.storage->begin(), tensor.storage->end(), value);
     return tensor;
 }
 
-Tensor Tensor::randn(std::vector<int>& shape, bool require_grad) {
+Tensor Tensor::randn(const std::vector<int>& shape, bool require_grad) {
     static std::mt19937 gen(std::random_device{}());
     std::normal_distribution<float> dis(0.0f, 1.0f);
 
@@ -85,7 +85,7 @@ Tensor Tensor::randn(std::vector<int>& shape, bool require_grad) {
     return tensor;
 }
 
-Tensor Tensor::rand(std::vector<int>& shape, bool require_grad) {
+Tensor Tensor::rand(const std::vector<int>& shape, bool require_grad) {
     static std::mt19937 gen(std::random_device{}());
     std::normal_distribution<float> dis(0.0f, 1.0f);
 
@@ -293,23 +293,57 @@ Tensor Tensor::operator/(const Tensor& rhs) const {
     return out;
 }
 
-Tensor Tensor::operator-() const {}
+Tensor Tensor::operator-() const {
+    return *this * -1.0f;
+}
 
-Tensor Tensor::operator+(float scalar) const {}
+Tensor Tensor::operator+(float scalar) const {
+    return *this + full(shape, scalar);
+}
 
-Tensor Tensor::operator-(float scalar) const {}
+Tensor Tensor::operator-(float scalar) const {
+    return *this - full(shape, scalar);
+}
 
-Tensor Tensor::operator*(float scalar) const {}
+Tensor Tensor::operator*(float scalar) const {
+    return *this * full(shape, scalar);
+}
 
-Tensor Tensor::operator/(float scalar) const {}
+Tensor Tensor::operator/(float scalar) const {
+    return *this / full(shape, scalar);
+}
 
-Tensor& Tensor::operator+=(const Tensor& rhs) {}
+Tensor& Tensor::operator+=(const Tensor& rhs) {
+    for (int i = 0; i < nelem(); ++i) {
+        (*storage)[offset + i] += (*rhs.storage)[rhs.offset + i];
+    }
 
-Tensor& Tensor::operator-=(const Tensor& rhs) {}
+    return *this;
+}
 
-Tensor& Tensor::operator*=(const Tensor& rhs) {}
+Tensor& Tensor::operator-=(const Tensor& rhs) {
+    for (int i = 0; i < nelem(); ++i) {
+        (*storage)[offset + i] -= (*rhs.storage)[rhs.offset + i];
+    }
 
-Tensor& Tensor::operator/=(const Tensor& rhs) {}
+    return *this;
+}
+
+Tensor& Tensor::operator*=(const Tensor& rhs) {
+    for (int i = 0; i < nelem(); ++i) {
+        (*storage)[offset + i] *= (*rhs.storage)[rhs.offset + i];
+    }
+
+    return *this;
+}
+
+Tensor& Tensor::operator/=(const Tensor& rhs) {
+    for (int i = 0; i < nelem(); ++i) {
+        (*storage)[offset + i] /= (*rhs.storage)[rhs.offset + i];
+    }
+
+    return *this;
+}
 
 Tensor operator+(float scalar, const Tensor& tensor) { return scalar += tensor; }
 
@@ -396,7 +430,7 @@ std::vector<int> Tensor::broadcast_shape(const std::vector<int>& shape_one, cons
     return broadcasted_shape;
 }
 
-void Tensor::set_gradient_func(GradientFunc func, std::vector<std::shared_ptr<Tensor>> inputs) {
+void Tensor::set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<Tensor>>& inputs) {
     this->gradient_func = func;
     this->inputs = inputs;
 }
