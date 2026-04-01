@@ -1,5 +1,6 @@
 #ifndef AXON_TENSOR_H
 #define AXON_TENSOR_H
+#include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -302,6 +303,13 @@ class Tensor {
 
     // Utils
 
+    // Autograd handling
+    using GradientFunc = std::function<void(const Tensor&)>;
+
+    void set_gradient_func(GradientFunc func, std::vector<std::shared_ptr<Tensor>> inputs);
+
+    bool get_is_leaf() const;
+
   private:
     std::shared_ptr<std::vector<float>> storage;
     int offset = 0;
@@ -315,6 +323,7 @@ class Tensor {
     std::shared_ptr<Tensor> grad;
 
     std::vector<std::shared_ptr<Tensor>> inputs;
+    GradientFunc gradient_func;
 
     /**
      * @brief Converts a multidimensional index to a flat storage index

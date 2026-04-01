@@ -64,9 +64,7 @@ Tensor Tensor::zeros(std::vector<int>& shape, bool require_grad) {
     return Tensor(shape, require_grad);
 }
 
-Tensor Tensor::ones(std::vector<int>& shape, bool require_grad) {
-    return Tensor::full(shape, 1.0f, require_grad);
-}
+Tensor Tensor::ones(std::vector<int>& shape, bool require_grad) { return Tensor::full(shape, 1.0f, require_grad); }
 
 Tensor Tensor::full(std::vector<int>& shape, float value, bool requires_grad) {
     Tensor tensor(shape, requires_grad);
@@ -122,17 +120,11 @@ Tensor Tensor::arange(float start, float stop, float step, bool require_grad) {
     return tensor;
 }
 
-const std::vector<int>& Tensor::get_shape() const {
-    return shape;
-}
+const std::vector<int>& Tensor::get_shape() const { return shape; }
 
-const std::vector<int>& Tensor::get_strides() const {
-    return strides;
-}
+const std::vector<int>& Tensor::get_strides() const { return strides; }
 
-int Tensor::ndim() const {
-    return static_cast<int>(shape.size());
-}
+int Tensor::ndim() const { return static_cast<int>(shape.size()); }
 
 int Tensor::nelem() const {
     int n = 1;
@@ -153,13 +145,9 @@ int Tensor::size(int dim) const {
     return shape[dim];
 }
 
-bool Tensor::requires_grad() const {
-    return require_grad;
-}
+bool Tensor::requires_grad() const { return require_grad; }
 
-bool Tensor::set_requires_grad(bool require_grad) {
-    this->require_grad = require_grad;
-}
+bool Tensor::set_requires_grad(bool require_grad) { this->require_grad = require_grad; }
 
 bool Tensor::is_contiguous() {
     int stride = 1;
@@ -172,13 +160,9 @@ bool Tensor::is_contiguous() {
     return true;
 }
 
-float* Tensor::data() {
-    return storage->data() + offset;
-}
+float* Tensor::data() { return storage->data() + offset; }
 
-const float* Tensor::data() const {
-    return storage->data() + offset;
-}
+const float* Tensor::data() const { return storage->data() + offset; }
 
 float Tensor::at(const std::vector<int>& idx) const {
     int flat_idx = flat_idnex(idx);
@@ -190,15 +174,11 @@ float& Tensor::at(const std::vector<int>& idx) {
     return (*storage)[offset + flat_idx];
 }
 
-float Tensor::operator[](int idx) const {
-    return (*storage)[offset + idx];
-}
+float Tensor::operator[](int idx) const { return (*storage)[offset + idx]; }
 
-float& Tensor::operator[](int idx) {
-    return (*storage)[offset + idx];
-}
+float& Tensor::operator[](int idx) { return (*storage)[offset + idx]; }
 
-template<typename Operation>
+template <typename Operation>
 Tensor Tensor::binary_op(const Tensor& rhs, Operation op) const {
     auto out_shape = broadcast_shape(shape, rhs.shape);
     int n = 1;
@@ -214,18 +194,104 @@ Tensor Tensor::binary_op(const Tensor& rhs, Operation op) const {
 }
 
 Tensor Tensor::operator+(const Tensor& rhs) const {
-    Tensor result(shape, require_grad || rhs.require_grad);
-    for (int i = 0; i < nelem(); ++i) {
-        (*result.storage)[i] = (*storage)[offset + i] + (*rhs.storage)[rhs.offset + i];
+    Tensor out = binary_op(*this, [](const float a, const float b) { return a + b; });
+
+    if (out.require_grad) {
+        auto lhs_ptr = std::make_shared<Tensor>(*this);
+        auto rhs_ptr = std::make_shared<Tensor>(rhs);
+
+        out.inputs = {lhs_ptr, rhs_ptr};
+        out.is_leaf = false;
+        out.gradient_func = [lhs_ptr, rhs_ptr](const Tensor& grad) {
+            // ADding should pass grad straight through both sides
+            if (lhs_ptr->require_grad) {
+                lhs_ptr->grad = std::make_shared<Tensor>(lhs_ptr->grad ? *lhs_ptr->grad + grad : grad);
+            }
+
+            if (rhs_ptr->require_grad) {
+                rhs_ptr->grad = std::make_shared<Tensor>(rhs_ptr->grad ? *rhs_ptr->grad + grad : grad);
+            }
+        };
     }
+
+    return out;
 }
 
 Tensor Tensor::operator-(const Tensor& rhs) const {
+    Tensor out = binary_op(rhs, [](const float a, const float b) { return a - b; });
+
+    if (out.require_grad) {
+        auto lhs_ptr = std::make_shared<Tensor>(*this);
+        auto rhs_ptr = std::make_shared<Tensor>(rhs);
+        out.inputs = {lhs_ptr, rhs_ptr};
+        out.is_leaf = false;
+        out.gradient_func = [lhs_ptr, rhs_ptr](const Tensor& grad) {
+            // lhs should get +grad
+            if (lhs_ptr->require_grad) {
+                lhs_ptr->grad = std::make_shared<Tensor>(lhs_ptr->grad ? *lhs_ptr->grad + grad : grad);
+            }
+
+            // rhs gets -grad
+            if (rhs_ptr->require_grad) {
+                Tensor neg_grad = -grad;
+                rhs_ptr->grad = std::make_shared<Tensor>(rhs_ptr->grad ? *rhs_ptr->grad + neg_grad : neg_grad);
+            }
+        };
+    }
+
+    return out;
 }
 
-Tensor Tensor::operator*(const Tensor& rhs) const {}
+Tensor Tensor::operator*(const Tensor& rhs) const {
+    Tensor out = binary_op(rhs, [](const float a, const float b) { return a * b; });
 
-Tensor Tensor::operator/(const Tensor& rhs) const {}
+    if (out.require_grad) {
+        auto lhs_ptr = std::make_shared<Tensor>(*this);
+        auto rhs_ptr = std::make_shared<Tensor>(rhs);
+
+        out.inputs = {lhs_ptr, rhs_ptr};
+        out.is_leaf = false;
+        out.gradient_func = [lhs_ptr, rhs_ptr](const Tensor& grad) {
+            // d/da (a*b) = b
+            // d/db (a*b) = a
+            if (lhs_ptr->require_grad) {
+                Tensor lhs_grad = grad * *rhs_ptr;
+                lhs_ptr->grad = std::make_shared<Tensor>(lhs_ptr->grad ? *lhs_ptr->grad + lhs_grad : lhs_grad);
+            }
+            if (rhs_ptr->require_grad) {
+                Tensor rhs_grad = grad * *lhs_ptr;
+                rhs_ptr->grad = std::make_shared<Tensor>(rhs_ptr->grad ? *rhs_ptr->grad + rhs_grad : rhs_grad);
+            }
+        };
+    }
+
+    return out;
+}
+
+Tensor Tensor::operator/(const Tensor& rhs) const {
+    Tensor out = binary_op(rhs, [](const float a, const float b) { return a / b; });
+
+    if (out.require_grad) {
+        auto lhs_ptr = std::make_shared<Tensor>(*this);
+        auto rhs_ptr = std::make_shared<Tensor>(rhs);
+        out.inputs = {lhs_ptr, rhs_ptr};
+        out.is_leaf = false;
+        out.gradient_func = [lhs_ptr, rhs_ptr](const Tensor& grad) {
+            // d/da (a/b) = 1/b
+            // d/db (a/b) = -a/b^2
+            if (lhs_ptr->require_grad) {
+                Tensor lhs_grad = grad / *rhs_ptr;
+                lhs_ptr->grad = std::make_shared<Tensor>(lhs_ptr->grad ? *lhs_ptr->grad + lhs_grad : lhs_grad);
+            }
+            if (rhs_ptr->require_grad) {
+                Tensor rhs_grad = grad * (*lhs_ptr * -1.0f) / (*rhs_ptr * *rhs_ptr);
+                rhs_ptr->grad = std::make_shared<Tensor>(rhs_ptr->grad ? *rhs_ptr->grad + rhs_grad : rhs_grad);
+            }
+        };
+    }
+
+    return out;
+}
 
 Tensor Tensor::operator-() const {}
 
@@ -296,9 +362,7 @@ int Tensor::broadcast_index(int flat, const std::vector<int>& out_shape, const s
         int out_idx = flat % out_shape[i];
         flat /= out_shape[i];
 
-        int in_dim = (i >= ndim - in_shape.size())
-                       ? in_shape[i - (ndim - in_shape.size())]
-                       : 1;
+        int in_dim = (i >= ndim - in_shape.size()) ? in_shape[i - (ndim - in_shape.size())] : 1;
         int in_idx = (in_dim == 1) ? 0 : out_idx;
 
         in_offset += stride * in_idx;
@@ -324,9 +388,17 @@ std::vector<int> Tensor::broadcast_shape(const std::vector<int>& shape_one, cons
             broadcasted_shape[ndim - 1 - i] = shape_one_dim;
         } else {
             // Shouldnt happen tho
-            throw std::out_of_range("Dimension out of range" + std::to_string(shape_one_dim) + " " + std::to_string(shape_two_dim));
+            throw std::out_of_range("Dimension out of range" + std::to_string(shape_one_dim) + " " +
+                                    std::to_string(shape_two_dim));
         }
     }
 
     return broadcasted_shape;
 }
+
+void Tensor::set_gradient_func(GradientFunc func, std::vector<std::shared_ptr<Tensor>> inputs) {
+    this->gradient_func = func;
+    this->inputs = inputs;
+}
+
+bool Tensor::get_is_leaf() const { return is_leaf; }
