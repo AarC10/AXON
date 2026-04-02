@@ -1,6 +1,7 @@
 #include "core/Tensor.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <random>
 #include <stdexcept>
@@ -314,6 +315,7 @@ Tensor Tensor::operator*(float scalar) const { return *this * full(shape, scalar
 Tensor Tensor::operator/(float scalar) const { return *this / full(shape, scalar); }
 
 Tensor& Tensor::operator+=(const Tensor& rhs) {
+    assert(!require_grad && "In-place op on a tensor that requires grad will corrupt the autograd graph");
     for (int i = 0; i < nelem(); ++i) {
         (*storage)[offset + i] += (*rhs.storage)[rhs.offset + i];
     }
@@ -322,6 +324,7 @@ Tensor& Tensor::operator+=(const Tensor& rhs) {
 }
 
 Tensor& Tensor::operator-=(const Tensor& rhs) {
+    assert(!require_grad && "In-place op on a tensor that requires grad will corrupt the autograd graph");
     for (int i = 0; i < nelem(); ++i) {
         (*storage)[offset + i] -= (*rhs.storage)[rhs.offset + i];
     }
@@ -330,6 +333,7 @@ Tensor& Tensor::operator-=(const Tensor& rhs) {
 }
 
 Tensor& Tensor::operator*=(const Tensor& rhs) {
+    assert(!require_grad && "In-place op on a tensor that requires grad will corrupt the autograd graph");
     for (int i = 0; i < nelem(); ++i) {
         (*storage)[offset + i] *= (*rhs.storage)[rhs.offset + i];
     }
@@ -338,6 +342,7 @@ Tensor& Tensor::operator*=(const Tensor& rhs) {
 }
 
 Tensor& Tensor::operator/=(const Tensor& rhs) {
+    assert(!require_grad && "In-place op on a tensor that requires grad will corrupt the autograd graph");
     for (int i = 0; i < nelem(); ++i) {
         (*storage)[offset + i] /= (*rhs.storage)[rhs.offset + i];
     }
