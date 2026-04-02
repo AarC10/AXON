@@ -38,13 +38,13 @@ void test_shape_and_fill() {
 
 void test_requires_grad_flag() {
     Tensor tensor = Tensor::zeros({2, 2});
-    assert(!tensor.requires_grad());
+    assert(!tensor.get_require_grad());
 
     tensor.set_require_grad(true);
-    assert(tensor.requires_grad());
+    assert(tensor.get_require_grad());
 
     tensor.set_require_grad(false);
-    assert(!tensor.requires_grad());
+    assert(!tensor.get_require_grad());
 }
 
 void test_inplace_arithmetic() {

@@ -163,7 +163,7 @@ int Tensor::size(int dim) const {
     return shape[dim];
 }
 
-bool Tensor::requires_grad() const { return require_grad; }
+bool Tensor::get_require_grad() const { return require_grad; }
 
 void Tensor::set_require_grad(const bool require_grad) { this->require_grad = require_grad; }
 

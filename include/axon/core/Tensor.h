@@ -139,7 +139,7 @@ class Tensor {
     int size(int dim) const;
 
     /** @brief Returns whether this tensor tracks gradients */
-    bool requires_grad() const;
+    bool get_require_grad() const;
 
     /**
      * @brief Enables or disables gradient tracking
