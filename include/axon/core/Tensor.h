@@ -83,7 +83,7 @@ class Tensor {
     static Tensor full(const std::vector<int> &shape, float value, bool require_grad = false);
 
     /**
-     * @brief Creates a tensor with values sampled from a normal distribution
+     * @brief Creates a tensor with values sampled from a standard normal distribution
      * @param shape Dimensions of the tensor
      * @param require_grad Whether to track gradients for this tensor
      * @return A randomly initialized tensor sampled from a normal distribution
@@ -91,7 +91,7 @@ class Tensor {
     static Tensor randn(const std::vector<int> &shape, bool require_grad = false);
 
     /**
-     * @brief Creates a tensor with values sampled from a uniform distribution
+     * @brief Creates a tensor with values sampled from a uniform distribution over [0, 1)
      * @param shape Dimensions of the tensor
      * @param require_grad Whether to track gradients for this tensor
      * @return A randomly initialized tensor sampled from a uniform distribution
