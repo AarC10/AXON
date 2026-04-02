@@ -53,7 +53,9 @@ class Tensor {
     /** @brief Destroys the tensor */
     ~Tensor() = default;
 
-    // Static Factories
+    // ==================================
+    // ======== Static Factories ========
+    // ==================================
 
     /**
      * @brief Creates a tensor filled with zeros
@@ -113,8 +115,10 @@ class Tensor {
      * @return A 1D tensor containing the generated range
      */
     static Tensor arange(float start, float stop, float step = 1.0f, bool require_grad = false);
+    // ==================================
+    // ============== Shape =============
+    // ==================================
 
-    // Shape
     /** @brief Returns the tensor shape */
     const std::vector<int> &get_shape() const;
 
@@ -146,7 +150,11 @@ class Tensor {
     /** @brief Returns true when storage layout is contiguous */
     bool is_contiguous();
 
-    // Data Access
+
+    // ==================================
+    // ========== Data Access ===========
+    // ==================================
+
     /** @brief Returns a mutable pointer to underlying data */
     float *data();
 
@@ -180,10 +188,14 @@ class Tensor {
      * @return Mutable reference to the addressed element
      */
     float &operator[](int idx);
+    // ==================================
+    // ======= Shape Manipulation =======
+    // ==================================
 
-    // Shape manip
+    // ==================================
+    // ====== Arithmetic Operations =====
+    // ==================================
 
-    // Arithmetic Ops
     template <typename Operation>
     Tensor binary_op(const Tensor &rhs, Operation op) const;
 
@@ -238,7 +250,10 @@ class Tensor {
     /** @brief Divides a lhs scalar by a tensor */
     friend Tensor operator/(float scalar, const Tensor &tensor);
 
-    // Elementwise maffs
+    // ==================================
+    // ======== Elementwise Math ========
+    // ==================================
+
     /** @brief Elementwise exponential */
     Tensor exp() const;
 
@@ -272,7 +287,7 @@ class Tensor {
      */
     Tensor clip(float min, float max) const;
 
-    // COmparison ops
+    // ======== Comparison Operations ========
     /** @brief Elementwise equality comparison */
     Tensor operator==(const Tensor &rhs) const;
 
@@ -291,17 +306,31 @@ class Tensor {
     /** @brief Elementwise GTE comparison */
     Tensor operator>=(const Tensor &rhs) const;
 
-    // ACtivation functions
+    // ==================================
+    // ====== Activation Functions ======
+    // ==================================
 
-    // Reduction Ops
+    // ==================================
+    // ====== Reduction Operations ======
+    // ==================================
 
-    // LinAlg
+    // ==================================
+    // ========= Linear Algebra =========
+    // ==================================
 
-    // Autograd
+    // ==================================
+    // ============ Autograd ============
+    // ==================================
 
-    // Utils
+    // ==================================
+    // =========== Utilities ===========
+    // ==================================
 
-    // Autograd handling
+    // ==================================
+    // ======== Autograd Handling ========
+    // ==================================
+
+
     using GradientFunc = std::function<void(const Tensor &)>;
 
     void set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<Tensor>> &inputs);
