@@ -345,7 +345,7 @@ class Tensor {
     std::vector<int> shape;
     std::vector<int> strides;
 
-    bool require_grad;
+    bool require_grad = false;
     bool is_leaf = true;
 
     std::shared_ptr<Tensor> grad;
