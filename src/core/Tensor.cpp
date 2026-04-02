@@ -34,7 +34,7 @@ Tensor::Tensor(const std::vector<float>& data, const std::vector<int>& shape, bo
 
     if (data.size() != n) {
         throw std::invalid_argument("Data size (" + std::to_string(data.size()) +
-            ") doesn't match tensor shape (expected " + std::to_string(n) + " elements)");
+                                    ") doesn't match tensor shape (expected " + std::to_string(n) + " elements)");
     }
 
     storage = std::make_shared<std::vector<float>>(data.begin(), data.end());
@@ -139,7 +139,7 @@ Tensor Tensor::arange(float start, float stop, float step, bool require_grad) {
     int n = static_cast<int>(std::ceil((stop - start) / step));
     if (n < 0) {
         throw std::invalid_argument("Invalid range: start=" + std::to_string(start) + ", stop=" + std::to_string(stop) +
-            "), step=" + std::to_string(step));
+                                    "), step=" + std::to_string(step));
     }
 
     Tensor tensor({n}, require_grad);
@@ -196,18 +196,13 @@ float* Tensor::data() { return storage->data() + offset; }
 
 const float* Tensor::data() const { return storage->data() + offset; }
 
-float Tensor::at(const std::vector<int>& idx) const {
-    return (*storage)[flat_index(idx)];
-}
+float Tensor::at(const std::vector<int>& idx) const { return (*storage)[flat_index(idx)]; }
 
-float& Tensor::at(const std::vector<int>& idx) {
-    return (*storage)[flat_index(idx)];
-}
+float& Tensor::at(const std::vector<int>& idx) { return (*storage)[flat_index(idx)]; }
 
 float Tensor::operator[](int idx) const { return (*storage)[offset + idx]; }
 
 float& Tensor::operator[](int idx) { return (*storage)[offset + idx]; }
-
 
 Tensor Tensor::operator+(const Tensor& rhs) const {
     Tensor out = binary_op(rhs, [](const float a, const float b) { return a + b; });
@@ -343,7 +338,6 @@ Tensor& Tensor::operator-=(const Tensor& rhs) {
     if (shape != rhs.shape) {
         throw std::invalid_argument("In-place op requires identical shapes");
     }
-
 
     for (int i = 0; i < nelem(); ++i) {
         (*storage)[offset + i] -= (*rhs.storage)[rhs.offset + i];
@@ -662,9 +656,8 @@ std::vector<int> Tensor::broadcast_shape(const std::vector<int>& shape_one, cons
         if (shape_one_dim == shape_two_dim || shape_one_dim == 1 || shape_two_dim == 1) {
             broadcasted_shape[ndim - 1 - i] = std::max(shape_one_dim, shape_two_dim);
         } else {
-            throw std::invalid_argument(
-                "Incompatible dimensions for broadcasting: " + std::to_string(shape_one_dim) + " and " +
-                std::to_string(shape_two_dim));
+            throw std::invalid_argument("Incompatible dimensions for broadcasting: " + std::to_string(shape_one_dim) +
+                                        " and " + std::to_string(shape_two_dim));
         }
     }
 

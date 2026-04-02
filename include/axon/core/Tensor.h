@@ -150,7 +150,6 @@ class Tensor {
     /** @brief Returns true when storage layout is contiguous */
     bool is_contiguous() const;
 
-
     // ==================================
     // ========== Data Access ===========
     // ==================================
@@ -330,7 +329,6 @@ class Tensor {
     // ==================================
     // ======== Autograd Handling ========
     // ==================================
-
 
     using GradientFunc = std::function<void(const Tensor &)>;
 

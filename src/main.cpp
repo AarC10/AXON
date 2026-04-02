@@ -8,9 +8,7 @@
 #include <utility>
 namespace {
 
-bool approx_equal(float a, float b, float eps = 1e-5f) {
-    return std::fabs(a - b) <= eps;
-}
+bool approx_equal(float a, float b, float eps = 1e-5f) { return std::fabs(a - b) <= eps; }
 
 void test_shape_and_fill() {
     Tensor zero_matrix = Tensor::zeros({2, 3});
@@ -87,7 +85,7 @@ void test_copy_and_move_semantics() {
     assert(approx_equal(moved[1], 9.0f));
 }
 
-}
+} // namespace
 
 int main() {
     test_shape_and_fill();
