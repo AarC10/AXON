@@ -145,7 +145,7 @@ class Tensor {
      * @brief Enables or disables gradient tracking
      * @param require_grad New gradient tracking flag
      */
-    void set_requires_grad(bool require_grad);
+    void set_require_grad(bool require_grad);
 
     /** @brief Returns true when storage layout is contiguous */
     bool is_contiguous();
@@ -265,7 +265,7 @@ class Tensor {
 
     /** @brief Elementwise absolute value */
     Tensor abs() const;
-  
+
     /**
      * @brief Raises each element to a scalar exponent
      * @param exponent Scalar exponent

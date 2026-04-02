@@ -40,10 +40,10 @@ void test_requires_grad_flag() {
     Tensor tensor = Tensor::zeros({2, 2});
     assert(!tensor.requires_grad());
 
-    tensor.set_requires_grad(true);
+    tensor.set_require_grad(true);
     assert(tensor.requires_grad());
 
-    tensor.set_requires_grad(false);
+    tensor.set_require_grad(false);
     assert(!tensor.requires_grad());
 }
 
