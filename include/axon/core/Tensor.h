@@ -351,4 +351,6 @@ class Tensor {
     static std::vector<int> broadcast_shape(const std::vector<int> &shape_one, const std::vector<int> &shape_two);
 };
 
+#include "core/Tensor.tpp"
+
 #endif // AXON_TENSOR_H
