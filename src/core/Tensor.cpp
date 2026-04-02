@@ -43,7 +43,8 @@ Tensor::Tensor(const std::vector<float>& data, const std::vector<int>& shape, bo
 
 Tensor::Tensor(const Tensor& other)
     : storage(std::make_shared<std::vector<float>>(*other.storage)), offset(other.offset), shape(other.shape),
-      strides(other.strides), require_grad(false), is_leaf(true) {}
+      strides(other.strides), require_grad(other.require_grad), is_leaf(other.is_leaf), grad(other.grad),
+      inputs(other.inputs), gradient_func(other.gradient_func) {}
 
 Tensor::Tensor(Tensor&& other)
     : storage(std::move(other.storage)), offset(other.offset), shape(std::move(other.shape)),
@@ -58,11 +59,11 @@ Tensor& Tensor::operator=(const Tensor& other) {
     offset = other.offset;
     shape = other.shape;
     strides = other.strides;
-    require_grad = false;
-    is_leaf = true;
-    grad = nullptr;
-    inputs.clear();
-    gradient_func = nullptr;
+    require_grad = other.require_grad;
+    is_leaf = other.is_leaf;
+    grad = other.grad;
+    inputs = other.inputs;
+    gradient_func = other.gradient_func;
     return *this;
 }
 
@@ -137,7 +138,8 @@ Tensor Tensor::arange(float start, float stop, float step, bool require_grad) {
     }
 
     int n = static_cast<int>(std::ceil((stop - start) / step));
-    if (n < 0) {
+
+    if (n <= 0) {
         throw std::invalid_argument("Invalid range: start=" + std::to_string(start) + ", stop=" + std::to_string(stop) +
                                     "), step=" + std::to_string(step));
     }
@@ -399,9 +401,9 @@ Tensor Tensor::exp() const {
 
         out.inputs = {self_data};
         out.is_leaf = false;
-        out.gradient_func = [self_data, out_ptr](const Tensor& grad) {
+        out.gradient_func = [self_data](const Tensor& grad) {
             // d/dx exp(x) = exp(x)
-            Tensor lhs_grad = grad * *out_ptr;
+            Tensor lhs_grad = grad * self_data->exp();
             self_data->grad = std::make_shared<Tensor>(self_data->grad ? *self_data->grad + lhs_grad : lhs_grad);
         };
     }
@@ -613,6 +615,7 @@ void Tensor::detach_grad_state() {
     is_leaf = true;
     inputs.clear();
     gradient_func = nullptr;
+    grad = nullptr;
 }
 
 void Tensor::compute_strides() {
