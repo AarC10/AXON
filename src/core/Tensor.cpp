@@ -39,7 +39,7 @@ Tensor::Tensor(const Tensor& other)
 Tensor::Tensor(Tensor&& other)
     : storage(std::move(other.storage)), offset(other.offset), shape(std::move(other.shape)),
       strides(std::move(other.strides)), require_grad(other.require_grad), is_leaf(other.is_leaf),
-      grad(std::move(other.grad)), inputs(std::move(other.inputs)), gradient_func(other.gradient_func) {}
+      grad(std::move(other.grad)), inputs(std::move(other.inputs)), gradient_func(std::move(other.gradient_func)) {}
 
 Tensor& Tensor::operator=(const Tensor& other) {
     if (this == &other) {
@@ -69,7 +69,7 @@ Tensor& Tensor::operator=(Tensor&& other) {
     is_leaf = other.is_leaf;
     grad = std::move(other.grad);
     inputs = std::move(other.inputs);
-    gradient_func = other.gradient_func;
+    gradient_func = std::move(other.gradient_func);
     return *this;
 }
 
