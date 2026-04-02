@@ -511,27 +511,39 @@ Tensor Tensor::clip(float min, float max) const {
 }
 
 Tensor Tensor::operator==(const Tensor& rhs) const {
-    return binary_op(rhs, [](const float a, const float b) { return a == b ? 1.0f : 0.0f; });
+    Tensor out = binary_op(rhs, [](const float a, const float b) { return a == b ? 1.0f : 0.0f; });
+    out.detach_grad_state();
+    return out;
 }
 
 Tensor Tensor::operator!=(const Tensor& rhs) const {
-    return binary_op(rhs, [](const float a, const float b) { return a != b ? 1.0f : 0.0f; });
+    Tensor out = binary_op(rhs, [](const float a, const float b) { return a != b ? 1.0f : 0.0f; });
+    out.detach_grad_state();
+    return out;
 }
 
 Tensor Tensor::operator<(const Tensor& rhs) const {
-    return binary_op(rhs, [](const float a, const float b) { return a < b ? 1.0f : 0.0f; });
+    Tensor out = binary_op(rhs, [](const float a, const float b) { return a < b ? 1.0f : 0.0f; });
+    out.detach_grad_state();
+    return out;
 }
 
 Tensor Tensor::operator<=(const Tensor& rhs) const {
-    return binary_op(rhs, [](const float a, const float b) { return a <= b ? 1.0f : 0.0f; });
+    Tensor out = binary_op(rhs, [](const float a, const float b) { return a <= b ? 1.0f : 0.0f; });
+    out.detach_grad_state();
+    return out;
 }
 
 Tensor Tensor::operator>(const Tensor& rhs) const {
-    return binary_op(rhs, [](const float a, const float b) { return a > b ? 1.0f : 0.0f; });
+    Tensor out = binary_op(rhs, [](const float a, const float b) { return a > b ? 1.0f : 0.0f; });
+    out.detach_grad_state();
+    return out;
 }
 
 Tensor Tensor::operator>=(const Tensor& rhs) const {
-    return binary_op(rhs, [](const float a, const float b) { return a >= b ? 1.0f : 0.0f; });
+    Tensor out = binary_op(rhs, [](const float a, const float b) { return a >= b ? 1.0f : 0.0f; });
+    out.detach_grad_state();
+    return out;
 }
 
 void Tensor::set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<Tensor>>& inputs) {
@@ -558,6 +570,13 @@ int Tensor::flat_index(const std::vector<int>& idx) const {
     }
 
     return flat;
+}
+
+void Tensor::detach_grad_state() {
+    require_grad = false;
+    is_leaf = true;
+    inputs.clear();
+    gradient_func = nullptr;
 }
 
 void Tensor::compute_strides() {

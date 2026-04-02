@@ -363,6 +363,9 @@ class Tensor {
     /** @brief Recomputes strides from the current shape */
     void compute_strides();
 
+    /** @brief Strips all autograd state so the tensor behaves as a plain leaf */
+    void detach_grad_state();
+
     /**
      * @brief Computes the flat storage index for a broadcasted access
      * @param flat Flat index into the broadcasted output
