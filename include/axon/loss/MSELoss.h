@@ -2,22 +2,18 @@
 #define AXON_MSELOSS_H
 
 #include "core/Tensor.h"
+#include "loss/Loss.h"
 
 /**
  * @brief Mean Squared Error loss
  */
-class MSELoss {
+class MSELoss : public Loss {
   public:
     /** @brief Constructs an MSELoss instance */
     MSELoss() = default;
 
-    /**
-     * @brief Computes the mean squared error between prediction and target
-     * @param prediction Predicted tensor
-     * @param target Ground-truth tensor
-     * @return Scalar loss tensor
-     */
-    Tensor forward(const Tensor &prediction, const Tensor &target);
+    /** @copydoc Loss::forward */
+    Tensor forward(const Tensor &prediction, const Tensor &target) override;
 };
 
 #endif // AXON_MSELOSS_H

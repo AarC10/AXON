@@ -12,11 +12,7 @@ class ReLU : public Module {
     /** @brief Constructs a ReLU activation module */
     ReLU() = default;
 
-    /**
-     * @brief Applies the ReLU activation elementwise
-     * @param input Input tensor
-     * @return Output tensor with negative values zeroed
-     */
+    /** @copydoc Module::forward */
     Tensor forward(const Tensor &input) override;
 };
 

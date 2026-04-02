@@ -12,11 +12,7 @@ class Sigmoid : public Module {
     /** @brief Constructs a Sigmoid activation module */
     Sigmoid() = default;
 
-    /**
-     * @brief Applies the sigmoid activation elementwise
-     * @param input Input tensor
-     * @return Output tensor with values in (0, 1)
-     */
+    /** @copydoc Module::forward */
     Tensor forward(const Tensor &input) override;
 };
 

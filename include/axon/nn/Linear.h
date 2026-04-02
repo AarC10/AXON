@@ -20,17 +20,10 @@ class Linear : public Module {
      */
     Linear(int in_features, int out_features, bool bias = true);
 
-    /**
-     * @brief Computes the linear forward pass
-     * @param input Input tensor of shape (*, in_features)
-     * @return Output tensor of shape (*, out_features)
-     */
+    /** @copydoc Module::forward */
     Tensor forward(const Tensor &input) override;
 
-    /**
-     * @brief Returns all learnable parameters (weight and optional bias)
-     * @return Vector of shared pointers to parameter tensors
-     */
+    /** @copydoc Module::parameters */
     std::vector<std::shared_ptr<Tensor>> parameters() override;
 
   private:

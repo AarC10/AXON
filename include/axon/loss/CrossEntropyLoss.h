@@ -2,22 +2,18 @@
 #define AXON_CROSSENTROPYLOSS_H
 
 #include "core/Tensor.h"
+#include "loss/Loss.h"
 
 /**
  * @brief Cross-Entropy loss combining log softmax and negative log likelihood
  */
-class CrossEntropyLoss {
+class CrossEntropyLoss : public Loss {
   public:
     /** @brief Constructs a CrossEntropyLoss instance */
     CrossEntropyLoss() = default;
 
-    /**
-     * @brief Computes the cross-entropy loss between raw logits and class targets
-     * @param prediction Predicted logits tensor (unnormalized scores)
-     * @param target Ground-truth class label tensor
-     * @return Scalar loss tensor
-     */
-    Tensor forward(const Tensor &prediction, const Tensor &target);
+    /** @copydoc Loss::forward */
+    Tensor forward(const Tensor &prediction, const Tensor &target) override;
 };
 
 #endif // AXON_CROSSENTROPYLOSS_H
