@@ -27,7 +27,7 @@ Tensor::Tensor(const std::vector<float>& data, const std::vector<int>& shape, bo
         throw std::invalid_argument("Data size doesnt match shape");
     }
 
-    storage = std::make_shared<std::vector<float>>(n, 0.0f);
+    storage = std::make_shared<std::vector<float>>(data.begin(), data.end());
     compute_strides();
 }
 
