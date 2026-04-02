@@ -148,7 +148,7 @@ class Tensor {
     void set_require_grad(bool require_grad);
 
     /** @brief Returns true when storage layout is contiguous */
-    bool is_contiguous();
+    bool is_contiguous() const;
 
 
     // ==================================
