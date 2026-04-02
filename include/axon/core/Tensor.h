@@ -7,7 +7,7 @@
 class Tensor {
   public:
     /** @brief Constructs an empty tensor */
-    Tensor();
+    Tensor() = default;
 
     /**
      * @brief Constructs a zero-initialized tensor with the provided shape

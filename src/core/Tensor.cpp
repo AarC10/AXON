@@ -1,7 +1,10 @@
 #include "core/Tensor.h"
 
 #include <algorithm>
+#include <cmath>
 #include <random>
+#include <stdexcept>
+#include <string>
 
 Tensor::Tensor(const std::vector<int>& shape, bool requires_grad)
     : offset(0), shape(shape), require_grad(requires_grad), is_leaf(true) {
@@ -31,7 +34,7 @@ Tensor::Tensor(const std::vector<float>& data, const std::vector<int>& shape, bo
 Tensor::Tensor(const Tensor& other)
     : storage(std::make_shared<std::vector<float>>(*other.storage)), offset(other.offset), shape(other.shape),
       strides(other.strides), require_grad(other.require_grad), is_leaf(other.is_leaf), grad(other.grad),
-      inputs(other.inputs) {}
+      inputs(other.inputs), gradient_func(other.gradient_func) {}
 
 Tensor::Tensor(Tensor&& other)
     : storage(std::move(other.storage)), offset(other.offset), shape(std::move(other.shape)),
@@ -50,6 +53,7 @@ Tensor& Tensor::operator=(const Tensor& other) {
     is_leaf = other.is_leaf;
     grad = other.grad;
     inputs = other.inputs;
+    gradient_func = other.gradient_func;
     return *this;
 }
 
@@ -98,7 +102,7 @@ Tensor Tensor::randn(const std::vector<int>& shape, bool require_grad) {
 
 Tensor Tensor::rand(const std::vector<int>& shape, bool require_grad) {
     static std::mt19937 gen(std::random_device{}());
-    std::normal_distribution<float> dis(0.0f, 1.0f);
+    std::uniform_real_distribution<float> dis(0.0f, 1.0f);
 
     Tensor tensor(shape, require_grad);
 
@@ -123,7 +127,7 @@ Tensor Tensor::arange(float start, float stop, float step, bool require_grad) {
     }
 
     int n = static_cast<int>(std::ceil((stop - start) / step));
-    Tensor tensor({n, n}, require_grad);
+    Tensor tensor({n}, require_grad);
     for (int i = 0; i < n; ++i) {
         (*tensor.storage)[i] = start + i * step;
     }
@@ -178,8 +182,7 @@ float* Tensor::data() { return storage->data() + offset; }
 const float* Tensor::data() const { return storage->data() + offset; }
 
 float Tensor::at(const std::vector<int>& idx) const {
-    int flat_idx = flat_index(idx);
-    return (*storage)[offset + flat_idx];
+    return (*storage)[flat_index(idx)];
 }
 
 float& Tensor::at(const std::vector<int>& idx) {
@@ -535,6 +538,10 @@ bool Tensor::get_is_leaf() const { return is_leaf; }
 
 int Tensor::flat_index(const std::vector<int>& idx) const {
     int flat = offset;
+
+    if (flat < 0 || flat >= nelem()) {
+        throw std::out_of_range("Flat index out of range");
+    }
 
     for (int i = 0; i < idx.size(); i++) {
         flat += idx[i] * strides[i];
