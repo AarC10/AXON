@@ -11,6 +11,10 @@ Tensor::Tensor(const std::vector<int>& shape, bool requires_grad)
     : offset(0), shape(shape), require_grad(requires_grad), is_leaf(true) {
     int n = 1;
     for (int d : shape) {
+        if (d <= 0) {
+            throw std::invalid_argument("Shape dimensions must be positive");
+        }
+
         n *= d;
     }
     storage = std::make_shared<std::vector<float>>(n, 0.0f);
@@ -25,7 +29,8 @@ Tensor::Tensor(const std::vector<float>& data, const std::vector<int>& shape, bo
     }
 
     if (data.size() != n) {
-        throw std::invalid_argument("Data size doesnt match shape");
+        throw std::invalid_argument("Data size (" + std::to_string(data.size()) +
+            ") doesn't match tensor shape (expected " + std::to_string(n) + " elements)");
     }
 
     storage = std::make_shared<std::vector<float>>(data.begin(), data.end());
@@ -128,6 +133,11 @@ Tensor Tensor::arange(float start, float stop, float step, bool require_grad) {
     }
 
     int n = static_cast<int>(std::ceil((stop - start) / step));
+    if (n < 0) {
+        throw std::invalid_argument("Invalid range: start=" + std::to_string(start) + ", stop=" + std::to_string(stop) +
+            "), step=" + std::to_string(step));
+    }
+
     Tensor tensor({n}, require_grad);
     for (int i = 0; i < n; ++i) {
         (*tensor.storage)[i] = start + i * step;
@@ -306,7 +316,14 @@ Tensor Tensor::operator*(float scalar) const { return *this * full(shape, scalar
 Tensor Tensor::operator/(float scalar) const { return *this / full(shape, scalar); }
 
 Tensor& Tensor::operator+=(const Tensor& rhs) {
-    assert((!require_grad || is_leaf) && "In-place op on a tensor that requires grad will corrupt the autograd graph");
+    if (require_grad && !is_leaf) {
+        throw std::runtime_error("In-place op on non-leaf tensor that requires grad will corrupt the autograd graph");
+    }
+
+    if (shape != rhs.shape) {
+        throw std::invalid_argument("In-place op requires identical shapes");
+    }
+
     for (int i = 0; i < nelem(); ++i) {
         (*storage)[offset + i] += (*rhs.storage)[rhs.offset + i];
     }
@@ -315,7 +332,15 @@ Tensor& Tensor::operator+=(const Tensor& rhs) {
 }
 
 Tensor& Tensor::operator-=(const Tensor& rhs) {
-    assert((!require_grad || is_leaf) && "In-place op on a tensor that requires grad will corrupt the autograd graph");
+    if (require_grad && !is_leaf) {
+        throw std::runtime_error("In-place op on non-leaf tensor that requires grad will corrupt the autograd graph");
+    }
+
+    if (shape != rhs.shape) {
+        throw std::invalid_argument("In-place op requires identical shapes");
+    }
+
+
     for (int i = 0; i < nelem(); ++i) {
         (*storage)[offset + i] -= (*rhs.storage)[rhs.offset + i];
     }
@@ -324,7 +349,14 @@ Tensor& Tensor::operator-=(const Tensor& rhs) {
 }
 
 Tensor& Tensor::operator*=(const Tensor& rhs) {
-    assert((!require_grad || is_leaf) && "In-place op on a tensor that requires grad will corrupt the autograd graph");
+    if (require_grad && !is_leaf) {
+        throw std::runtime_error("In-place op on non-leaf tensor that requires grad will corrupt the autograd graph");
+    }
+
+    if (shape != rhs.shape) {
+        throw std::invalid_argument("In-place op requires identical shapes");
+    }
+
     for (int i = 0; i < nelem(); ++i) {
         (*storage)[offset + i] *= (*rhs.storage)[rhs.offset + i];
     }
@@ -333,7 +365,14 @@ Tensor& Tensor::operator*=(const Tensor& rhs) {
 }
 
 Tensor& Tensor::operator/=(const Tensor& rhs) {
-    assert((!require_grad || is_leaf) && "In-place op on a tensor that requires grad will corrupt the autograd graph");
+    if (require_grad && !is_leaf) {
+        throw std::runtime_error("In-place op on non-leaf tensor that requires grad will corrupt the autograd graph");
+    }
+
+    if (shape != rhs.shape) {
+        throw std::invalid_argument("In-place op requires identical shapes");
+    }
+
     for (int i = 0; i < nelem(); ++i) {
         (*storage)[offset + i] /= (*rhs.storage)[rhs.offset + i];
     }
