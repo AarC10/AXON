@@ -34,8 +34,7 @@ Tensor::Tensor(const std::vector<float>& data, const std::vector<int>& shape, bo
 
 Tensor::Tensor(const Tensor& other)
     : storage(std::make_shared<std::vector<float>>(*other.storage)), offset(other.offset), shape(other.shape),
-      strides(other.strides), require_grad(other.require_grad), is_leaf(other.is_leaf), grad(other.grad),
-      inputs(other.inputs), gradient_func(other.gradient_func) {}
+      strides(other.strides), require_grad(false), is_leaf(true) {}
 
 Tensor::Tensor(Tensor&& other)
     : storage(std::move(other.storage)), offset(other.offset), shape(std::move(other.shape)),
@@ -50,11 +49,11 @@ Tensor& Tensor::operator=(const Tensor& other) {
     offset = other.offset;
     shape = other.shape;
     strides = other.strides;
-    require_grad = other.require_grad;
-    is_leaf = other.is_leaf;
-    grad = other.grad;
-    inputs = other.inputs;
-    gradient_func = other.gradient_func;
+    require_grad = false;
+    is_leaf = true;
+    grad = nullptr;
+    inputs.clear();
+    gradient_func = nullptr;
     return *this;
 }
 
