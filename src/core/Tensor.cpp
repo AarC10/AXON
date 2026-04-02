@@ -6,7 +6,9 @@
 Tensor::Tensor(const std::vector<int>& shape, bool requires_grad)
     : offset(0), shape(shape), require_grad(requires_grad), is_leaf(true) {
     int n = 1;
-    for (int d : shape) n *= d;
+    for (int d : shape) {
+        n *= d;
+    }
     storage = std::make_shared<std::vector<float>>(n, 0.0f);
     compute_strides();
 }
@@ -14,7 +16,9 @@ Tensor::Tensor(const std::vector<int>& shape, bool requires_grad)
 Tensor::Tensor(const std::vector<float>& data, const std::vector<int>& shape, bool require_grad)
     : offset(0), shape(shape), require_grad(require_grad), is_leaf(true) {
     int n = 1;
-    for (const int d : shape) n *= d;
+    for (const int d : shape) {
+        n *= d;
+    }
 
     if (data.size() != n) {
         throw std::invalid_argument("Data size doesnt match shape");
@@ -35,7 +39,9 @@ Tensor::Tensor(Tensor&& other)
       grad(std::move(other.grad)), inputs(std::move(other.inputs)) {}
 
 Tensor& Tensor::operator=(const Tensor& other) {
-    if (this == &other) return *this;
+    if (this == &other) {
+        return *this;
+    }
     storage = std::make_shared<std::vector<float>>(*other.storage);
     offset = other.offset;
     shape = other.shape;
@@ -48,7 +54,9 @@ Tensor& Tensor::operator=(const Tensor& other) {
 }
 
 Tensor& Tensor::operator=(Tensor&& other) {
-    if (this == &other) return *this;
+    if (this == &other) {
+        return *this;
+    }
     storage = std::move(other.storage);
     offset = other.offset;
     shape = std::move(other.shape);
@@ -131,7 +139,9 @@ int Tensor::ndim() const { return static_cast<int>(shape.size()); }
 
 int Tensor::nelem() const {
     int n = 1;
-    for (int d : shape) n *= d;
+    for (int d : shape) {
+        n *= d;
+    }
     return n;
 }
 
@@ -358,7 +368,9 @@ Tensor Tensor::exp() const {
 Tensor Tensor::log() const {
     Tensor out(shape, require_grad);
 
-    for (int i = 0; i < nelem(); ++i) (*out.storage)[i] = std::log((*out.storage)[i + offset]);
+    for (int i = 0; i < nelem(); ++i) {
+        (*out.storage)[i] = std::log((*out.storage)[i + offset]);
+    }
 
     if (require_grad) {
         auto self = std::make_shared<Tensor>(*this);
@@ -396,7 +408,9 @@ Tensor Tensor::sqrt() const {
 }
 Tensor Tensor::abs() const {
     Tensor out(shape, require_grad);
-    for (int i = 0; i < nelem(); i++) (*out.storage)[i] = std::abs((*storage)[offset + i]);
+    for (int i = 0; i < nelem(); i++) {
+        (*out.storage)[i] = std::abs((*storage)[offset + i]);
+    }
 
     if (require_grad) {
         auto self = std::make_shared<Tensor>(*this);
@@ -419,7 +433,9 @@ Tensor Tensor::abs() const {
 
 Tensor Tensor::pow(float exponent) const {
     Tensor out(shape, require_grad);
-    for (int i = 0; i < nelem(); i++) (*out.storage)[i] = std::pow((*storage)[offset + i], exponent);
+    for (int i = 0; i < nelem(); i++) {
+        (*out.storage)[i] = std::pow((*storage)[offset + i], exponent);
+    }
 
     if (require_grad) {
         auto self = std::make_shared<Tensor>(*this);
@@ -463,7 +479,9 @@ Tensor Tensor::pow(const Tensor& exp) const {
 
 Tensor Tensor::clip(float min, float max) const {
     Tensor out(shape, require_grad);
-    for (int i = 0; i < nelem(); i++) (*out.storage)[i] = std::clamp((*storage)[offset + i], min, max);
+    for (int i = 0; i < nelem(); i++) {
+        (*out.storage)[i] = std::clamp((*storage)[offset + i], min, max);
+    }
 
     if (require_grad) {
         auto self = std::make_shared<Tensor>(*this);
