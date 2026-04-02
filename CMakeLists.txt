@@ -34,7 +34,23 @@ if(AXON_ENABLE_OPENMP)
   find_package(OpenMP REQUIRED)
 endif()
 
+# Include directories
+include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/axon
+)
+
 # Subdirectories
 add_subdirectory(src/core)
 add_subdirectory(src/nn)
 add_subdirectory(src/optimizers)
+
+add_library(axon INTERFACE)
+add_library(AXON::axon ALIAS axon)
+target_link_libraries(axon INTERFACE core optimizers)
+target_include_directories(axon INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/axon)
+
+# Below is temporary for now
+add_executable(axon_test src/main.cpp)
+target_link_libraries(axon_test PRIVATE axon)
+
+
