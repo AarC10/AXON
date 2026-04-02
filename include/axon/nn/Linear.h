@@ -1,11 +1,11 @@
 #ifndef AXON_LINEAR_H
 #define AXON_LINEAR_H
 
-#include <memory>
-#include <vector>
-
 #include "core/Tensor.h"
 #include "nn/Module.h"
+
+#include <memory>
+#include <vector>
 
 /**
  * @brief Fully-connected linear layer

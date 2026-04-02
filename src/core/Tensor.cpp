@@ -584,9 +584,7 @@ Tensor Tensor::operator>=(const Tensor& rhs) const {
     return out;
 }
 
-void Tensor::backward() {
-
-}
+void Tensor::backward() {}
 
 void Tensor::set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<Tensor>>& inputs) {
     this->gradient_func = func;

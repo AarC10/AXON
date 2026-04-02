@@ -1,10 +1,10 @@
 #ifndef AXON_MODULE_H
 #define AXON_MODULE_H
 
+#include "core/Tensor.h"
+
 #include <memory>
 #include <vector>
-
-#include "core/Tensor.h"
 
 /**
  * @brief Abstract base class for all neural network modules
