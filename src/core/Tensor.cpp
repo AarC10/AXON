@@ -155,7 +155,7 @@ int Tensor::size(int dim) const {
         dim += static_cast<int>(shape.size());
     }
 
-    if (dim < 0 || dim >= shape.size()) {
+    if (dim < 0 || dim >= static_cast<int>(shape.size())) {
         throw std::out_of_range("Dimension out of range");
     }
 
@@ -511,7 +511,7 @@ Tensor Tensor::clip(float min, float max) const {
             Tensor mask(self_data->shape, false);
             for (int i = 0; i < self_data->nelem(); i++) {
                 float val = (*self_data->storage)[self_data->offset + i];
-                (*mask.storage)[i] = (val > min && val < max) ? 1.0f : 0.0f;
+                (*mask.storage)[i] = (val >= min && val <= max) ? 1.0f : 0.0f;
             }
             Tensor lhs_grad = grad * mask;
             self_raw->grad = std::make_shared<Tensor>(self_raw->grad ? *self_raw->grad + lhs_grad : lhs_grad);
@@ -553,14 +553,19 @@ void Tensor::set_gradient_func(GradientFunc func, const std::vector<std::shared_
 bool Tensor::get_is_leaf() const { return is_leaf; }
 
 int Tensor::flat_index(const std::vector<int>& idx) const {
-    int flat = offset;
-
-    if (flat < 0 || flat >= nelem()) {
-        throw std::out_of_range("Flat index out of range");
+    if (idx.size() != shape.size()) {
+        throw std::invalid_argument("Index dimensionality does not match tensor shape");
     }
 
-    for (int i = 0; i < idx.size(); i++) {
-        flat += idx[i] * strides[i];
+    int flat = offset;
+
+    for (std::size_t i = 0; i < idx.size(); ++i) {
+        const int index = idx[i];
+
+        if (index < 0 || index >= shape[i]) {
+            throw std::out_of_range("Tensor index out of bounds");
+        }
+        flat += index * strides[i];
     }
 
     return flat;
@@ -570,7 +575,8 @@ void Tensor::compute_strides() {
     strides.resize(shape.size());
 
     int stride = 1;
-    for (int i = shape.size() - 1; i >= 0; --i) {
+
+    for (int i = static_cast<int>(shape.size()) - 1; i >= 0; --i) {
         strides[i] = stride;
         stride *= shape[i];
     }
@@ -603,16 +609,12 @@ std::vector<int> Tensor::broadcast_shape(const std::vector<int>& shape_one, cons
         int shape_one_dim = i < shape_one.size() ? shape_one[shape_one.size() - 1 - i] : 1;
         int shape_two_dim = i < shape_two.size() ? shape_two[shape_two.size() - 1 - i] : 1;
 
-        if (shape_one_dim == shape_two_dim) {
-            broadcasted_shape[ndim - 1 - i] = shape_one_dim;
-        } else if (shape_one_dim > shape_two_dim) {
-            broadcasted_shape[ndim - 1 - i] = shape_two_dim;
-        } else if (shape_one_dim < shape_two_dim) {
-            broadcasted_shape[ndim - 1 - i] = shape_one_dim;
+        if (shape_one_dim == shape_two_dim || shape_one_dim == 1 || shape_two_dim == 1) {
+            broadcasted_shape[ndim - 1 - i] = std::max(shape_one_dim, shape_two_dim);
         } else {
-            // Shouldnt happen tho
-            throw std::out_of_range("Dimension out of range" + std::to_string(shape_one_dim) + " " +
-                                    std::to_string(shape_two_dim));
+            throw std::invalid_argument(
+                "Incompatible dimensions for broadcasting: " + std::to_string(shape_one_dim) + " and " +
+                std::to_string(shape_two_dim));
         }
     }
 
