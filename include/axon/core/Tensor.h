@@ -132,7 +132,7 @@ class Tensor {
     int nelem() const;
 
     /**
-     * @brief Get thje size of the tensor for a specified dimension
+     * @brief Get the size of the tensor for a specified dimension
      * @param dim Dimension to query
      * @return Number of elements along dim
      */
@@ -265,6 +265,7 @@ class Tensor {
 
     /** @brief Elementwise absolute value */
     Tensor abs() const;
+  
     /**
      * @brief Raises each element to a scalar exponent
      * @param exponent Scalar exponent
