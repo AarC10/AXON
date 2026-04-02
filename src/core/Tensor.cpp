@@ -25,6 +25,10 @@ Tensor::Tensor(const std::vector<float>& data, const std::vector<int>& shape, bo
     : offset(0), shape(shape), require_grad(require_grad), is_leaf(true) {
     int n = 1;
     for (const int d : shape) {
+        if (d <= 0) {
+            throw std::invalid_argument("Shape dimensions must be positive");
+        }
+
         n *= d;
     }
 
@@ -177,7 +181,7 @@ bool Tensor::get_require_grad() const { return require_grad; }
 
 void Tensor::set_require_grad(const bool require_grad) { this->require_grad = require_grad; }
 
-bool Tensor::is_contiguous() {
+bool Tensor::is_contiguous() const {
     int stride = 1;
     for (int i = static_cast<int>(shape.size()) - 1; i >= 0; --i) {
         if (strides[i] != stride) {
