@@ -8,9 +8,6 @@
  */
 class Loss {
   public:
-    /** @brief Destroys the loss function */
-    virtual ~Loss() = default;
-
     /**
      * @brief Calculates the scalar loss between a prediction and a target
      * @param prediction Predicted tensor
