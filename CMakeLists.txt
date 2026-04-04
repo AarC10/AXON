@@ -43,10 +43,11 @@ include_directories(
 add_subdirectory(src/core)
 add_subdirectory(src/nn)
 add_subdirectory(src/optimizers)
+add_subdirectory(src/loss)
 
 add_library(axon INTERFACE)
 add_library(AXON::axon ALIAS axon)
-target_link_libraries(axon INTERFACE core optimizers)
+target_link_libraries(axon INTERFACE core nn optimizers loss)
 target_include_directories(axon INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/axon)
 
 # Below is temporary for now

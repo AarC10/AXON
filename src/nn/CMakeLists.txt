@@ -1,2 +1,8 @@
-#add_library(nn
-#)
+add_library(nn
+    Module.cpp
+    Linear.cpp
+    activations/ReLU.cpp
+    activations/Sigmoid.cpp
+)
+
+target_link_libraries(nn PUBLIC core)

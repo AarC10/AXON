@@ -322,6 +322,12 @@ class Tensor {
     // ============ Autograd ============
     // ==================================
 
+    /**
+     * @brief Runs backpropagation from this tensor through the computation graph,
+     *        accumulating gradients into all leaf tensors that require grad
+     */
+    void backward();
+
     // ==================================
     // =========== Utilities ===========
     // ==================================
