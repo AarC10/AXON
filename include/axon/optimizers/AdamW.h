@@ -21,6 +21,10 @@ class AdamW : public Optimizer {
     void step() override;
 
   private:
+    std::vector<Tensor> firstMomentEstimates;
+    std::vector<Tensor> secondMomentEstimates;
+    int stepCount = 0;
+
     float learningRate;
     float beta1Value;
     float beta2Value;
