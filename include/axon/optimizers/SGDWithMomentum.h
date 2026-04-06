@@ -18,6 +18,7 @@ class SGDWithMomentum : public Optimizer {
     void step() override;
 
   private:
+    std::vector<Tensor> velocities;
     float learningRate;
     float momentumValue;
 };
