@@ -19,6 +19,7 @@ class RMSProp : public Optimizer {
     void step() override;
 
   private:
+    std::vector<Tensor> squaredGradientAvg;
     float learningRate;
     float decayRate;
     float epsilonValue;
