@@ -322,11 +322,33 @@ class Tensor {
     // ============ Autograd ============
     // ==================================
 
+    // TODO: Matt complete these functions
     /**
      * @brief Runs backpropagation from this tensor through the computation graph,
      *        accumulating gradients into all leaf tensors that require grad
      */
     void backward();
+
+    /**
+     * Get the gradient accumulated tensor
+     * @return Reference to gradient tensor
+     */
+    Tensor& grad();
+
+    /**
+     * @brief Get a const ref to the gradient accumulated tensor
+     * @return Const ref to gradient tensor
+     */
+    const Tensor& grad() const;
+
+    /**
+     * @brief Get whether the tensor has a gradient
+     * @return True if the tensor has a gradient, false otherwise
+     */
+    bool has_grad() const;
+
+    /** @brief Zeros out the gradient for this tensor */
+    void zero_grad();
 
     // ==================================
     // =========== Utilities ===========
@@ -352,7 +374,7 @@ class Tensor {
     bool require_grad = false;
     bool is_leaf = true;
 
-    std::shared_ptr<Tensor> grad;
+    std::shared_ptr<Tensor> gradient;
 
     std::vector<std::shared_ptr<Tensor>> inputs;
     GradientFunc gradient_func;
