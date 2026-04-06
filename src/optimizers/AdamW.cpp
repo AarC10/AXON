@@ -34,7 +34,8 @@ void AdamW::step() {
         secondMomentEstimates[i] += (gradient * gradient) * Tensor::full(gradient.get_shape(), 1.0f - beta2Value);
 
         Tensor firstMomentHat = firstMomentEstimates[i] / Tensor::full(gradient.get_shape(), firstMomentBiasCorrection);
-        Tensor secondMomentHat = secondMomentEstimates[i] / Tensor::full(gradient.get_shape(), secondMomentBiasCorrection);
+        Tensor secondMomentHat =
+            secondMomentEstimates[i] / Tensor::full(gradient.get_shape(), secondMomentBiasCorrection);
         Tensor denominator = secondMomentHat.sqrt() + Tensor::full(gradient.get_shape(), epsilonValue);
         Tensor adaptiveUpdate = (firstMomentHat / denominator) * Tensor::full(gradient.get_shape(), learningRate);
         Tensor weightDecayUpdate = *parameter * Tensor::full(parameter->get_shape(), learningRate * weightDecay);
