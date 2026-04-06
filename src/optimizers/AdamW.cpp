@@ -1,7 +1,6 @@
 #include "optimizers/AdamW.h"
 
 #include <cmath>
-#include <stdexcept>
 
 AdamW::AdamW(std::vector<std::shared_ptr<Tensor>> parameters, const float learning_rate, const float beta1,
              const float beta2, const float epsilon, const float weight_decay)
