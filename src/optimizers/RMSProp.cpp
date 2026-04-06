@@ -5,8 +5,8 @@
 RMSProp::RMSProp(std::vector<std::shared_ptr<Tensor>> parameters, const float learning_rate, const float decay_rate,
                  const float epsilon)
     : Optimizer(std::move(parameters)), learningRate(learning_rate), decayRate(decay_rate), epsilonValue(epsilon) {
-    squaredGradientAvg.reserve(parameters.size());
-    for (const auto parameter : parameters) {
+    squaredGradientAvg.reserve(trackedParameters.size());
+    for (const auto& parameter : trackedParameters) {
         squaredGradientAvg.push_back(parameter ? Tensor::zeros(parameter->get_shape()) : Tensor());
     }
 }
