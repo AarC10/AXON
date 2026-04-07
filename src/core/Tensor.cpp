@@ -6,6 +6,7 @@
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <iostream>
 
 Tensor::Tensor(const std::vector<int>& shape, bool requires_grad)
     : offset(0), shape(shape), require_grad(requires_grad), is_leaf(true) {
@@ -223,6 +224,29 @@ Tensor Tensor::operator+(const Tensor& rhs) const {
 
             if (rhs_data->require_grad) {
                 rhs_data->gradient = std::make_shared<Tensor>(rhs_data->gradient ? *rhs_data->gradient + grad : grad);
+            }
+        };
+    }
+
+    return out;
+}
+
+Tensor Tensor::operator+(std::shared_ptr<Tensor> rhs_data) {
+    Tensor out = binary_op(*rhs_data, [](const float a, const float b) { return a + b; });
+
+    if (out.require_grad) {
+        std::shared_ptr<Tensor> lhs_data = shared_from_this();
+
+        out.inputs = {lhs_data, rhs_data};
+        out.is_leaf = false;
+        out.gradient_func = [lhs_data, rhs_data](const Tensor& grad) {
+            // Adding should pass grad straight through both sides
+            if (lhs_data->require_grad) {
+                lhs_data->gradient = std::make_shared<Tensor>(lhs_data->gradient ? *lhs_data->gradient + grad : Tensor(grad));
+            }
+
+            if (rhs_data->require_grad) {
+                rhs_data->gradient = std::make_shared<Tensor>(rhs_data->gradient ? *rhs_data->gradient + grad : Tensor(grad));
             }
         };
     }
@@ -602,7 +626,58 @@ void Tensor::zero_grad() {
 
 }
 
-void Tensor::backward() {}
+void Tensor::backward() {
+    if (require_grad) {
+        gradient = std::make_shared<Tensor>(Tensor::ones(shape));
+    } else {
+        return;
+    }
+
+    // If there are no inputs, there can be no backpropagation
+    if (inputs.size() == 0) {
+        return;
+    }
+
+    // Build dependency count
+    std::vector<std::shared_ptr<Tensor>> computation_tensors = inputs;
+
+    for (int i = 0; i < computation_tensors.size(); ++i) {
+        Tensor& tensor = *computation_tensors[i];
+
+        // Increment dependency counter for all inputs
+        for (const auto& input_tensor : tensor.inputs) {
+            input_tensor->backprop_dep_count += 1;
+            if (std::find(computation_tensors.begin(), computation_tensors.end(), input_tensor) == computation_tensors.end()) {
+                // This tensor hasn't been seen before, so it needs to be tracked
+                computation_tensors.push_back(input_tensor);
+            }
+        }
+    }
+
+    // Calculate gradients
+    gradient_func(*gradient);
+    while (!computation_tensors.empty()) {
+        auto tensor = computation_tensors.front();
+        computation_tensors.erase(computation_tensors.begin());
+
+        // If still waiting for dependencies, skip this
+        if (tensor->backprop_dep_count != 0) {
+            computation_tensors.push_back(tensor);
+            continue;
+        }
+
+        // If the tensor is a leaf, there are no more upstream gradients to compute
+        if (tensor->is_leaf) {
+            continue;
+        }
+
+        // Calculate inputs' gradients and decrement dependency counts
+        tensor->gradient_func(*tensor->gradient);
+        for (auto input : tensor->inputs) {
+            input->backprop_dep_count -= 1;
+        }
+    }
+}
 
 void Tensor::set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<Tensor>>& inputs) {
     this->gradient_func = func;

@@ -85,6 +85,26 @@ void test_copy_and_move_semantics() {
     assert(approx_equal(moved[1], 9.0f));
 }
 
+void test_backprop() {
+    auto a = make_shared<Tensor>(Tensor::full({1}, 0.0f, true));
+    auto b = make_shared<Tensor>(Tensor::full({1}, 1.0f, true));
+    auto c = make_shared<Tensor>(Tensor::full({1}, 1.0f, true));
+    auto d = make_shared<Tensor>(*a + b);
+    auto e = make_shared<Tensor>(*b + c);
+    auto f = make_shared<Tensor>(*d + e);
+    auto g = make_shared<Tensor>(*d + f);
+
+    g->backward();
+
+    assert(approx_equal(a->grad()[0], 2.0f));
+    assert(approx_equal(b->grad()[0], 3.0f));
+    assert(approx_equal(c->grad()[0], 1.0f));
+    assert(approx_equal(d->grad()[0], 2.0f));
+    assert(approx_equal(e->grad()[0], 1.0f));
+    assert(approx_equal(f->grad()[0], 1.0f));
+    assert(approx_equal(g->grad()[0], 1.0f));
+}
+
 } // namespace
 
 int main() {
@@ -92,6 +112,7 @@ int main() {
     test_requires_grad_flag();
     test_inplace_arithmetic();
     test_copy_and_move_semantics();
+    test_backprop();
 
     std::cout << "Pass!\n";
 

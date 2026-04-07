@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-class Tensor {
+class Tensor : public std::enable_shared_from_this<Tensor> {
   public:
     /** @brief Constructs an empty tensor */
     Tensor() = default;
@@ -199,7 +199,10 @@ class Tensor {
     Tensor binary_op(const Tensor &rhs, Operation op) const;
 
     /** @brief Elementwise tensor addition */
-    Tensor operator+(const Tensor &rhs) const;
+    Tensor operator+(const Tensor& rhs) const;
+
+    /** @brief Elementwise tensor addition */
+    Tensor operator+(std::shared_ptr<Tensor> rhs_data);
 
     /** @brief Elementwise tensor subtraction */
     Tensor operator-(const Tensor &rhs) const;
@@ -375,6 +378,7 @@ class Tensor {
     bool is_leaf = true;
 
     std::shared_ptr<Tensor> gradient;
+    uint backprop_dep_count = 0;
 
     std::vector<std::shared_ptr<Tensor>> inputs;
     GradientFunc gradient_func;
