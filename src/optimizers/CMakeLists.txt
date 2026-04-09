@@ -1,3 +1,7 @@
 add_library(optimizers
-    StochasticGradientDescent.cpp
+    Adam.cpp
+    AdamW.cpp
+    RMSProp.cpp
+    SGD.cpp
+    SGDWithMomentum.cpp
 )

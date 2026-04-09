@@ -333,13 +333,13 @@ class Tensor {
      * Get the gradient accumulated tensor
      * @return Reference to gradient tensor
      */
-    Tensor& grad();
+    Tensor &grad();
 
     /**
      * @brief Get a const ref to the gradient accumulated tensor
      * @return Const ref to gradient tensor
      */
-    const Tensor& grad() const;
+    const Tensor &grad() const;
 
     /**
      * @brief Get whether the tensor has a gradient

@@ -49,7 +49,8 @@ Tensor::Tensor(const Tensor& other)
 Tensor::Tensor(Tensor&& other)
     : storage(std::move(other.storage)), offset(other.offset), shape(std::move(other.shape)),
       strides(std::move(other.strides)), require_grad(other.require_grad), is_leaf(other.is_leaf),
-      gradient(std::move(other.gradient)), inputs(std::move(other.inputs)), gradient_func(std::move(other.gradient_func)) {}
+      gradient(std::move(other.gradient)), inputs(std::move(other.inputs)),
+      gradient_func(std::move(other.gradient_func)) {}
 
 Tensor& Tensor::operator=(const Tensor& other) {
     if (this == &other) {
@@ -247,7 +248,8 @@ Tensor Tensor::operator-(const Tensor& rhs) const {
             // rhs gets -grad
             if (rhs_data->require_grad) {
                 Tensor neg_grad = -grad;
-                rhs_data->gradient = std::make_shared<Tensor>(rhs_data->gradient ? *rhs_data->gradient + neg_grad : neg_grad);
+                rhs_data->gradient =
+                    std::make_shared<Tensor>(rhs_data->gradient ? *rhs_data->gradient + neg_grad : neg_grad);
             }
         };
     }
@@ -269,11 +271,13 @@ Tensor Tensor::operator*(const Tensor& rhs) const {
             // d/db (a*b) = a
             if (lhs_data->require_grad) {
                 Tensor lhs_grad = grad * *rhs_data;
-                lhs_data->gradient = std::make_shared<Tensor>(lhs_data->gradient ? *lhs_data->gradient + lhs_grad : lhs_grad);
+                lhs_data->gradient =
+                    std::make_shared<Tensor>(lhs_data->gradient ? *lhs_data->gradient + lhs_grad : lhs_grad);
             }
             if (rhs_data->require_grad) {
                 Tensor rhs_grad = grad * *lhs_data;
-                rhs_data->gradient = std::make_shared<Tensor>(rhs_data->gradient ? *rhs_data->gradient + rhs_grad : rhs_grad);
+                rhs_data->gradient =
+                    std::make_shared<Tensor>(rhs_data->gradient ? *rhs_data->gradient + rhs_grad : rhs_grad);
             }
         };
     }
@@ -294,11 +298,13 @@ Tensor Tensor::operator/(const Tensor& rhs) const {
             // d/db (a/b) = -a/b^2
             if (lhs_data->require_grad) {
                 Tensor lhs_grad = grad / *rhs_data;
-                lhs_data->gradient = std::make_shared<Tensor>(lhs_data->gradient ? *lhs_data->gradient + lhs_grad : lhs_grad);
+                lhs_data->gradient =
+                    std::make_shared<Tensor>(lhs_data->gradient ? *lhs_data->gradient + lhs_grad : lhs_grad);
             }
             if (rhs_data->require_grad) {
                 Tensor rhs_grad = grad * (*lhs_data * -1.0f) / (*rhs_data * *rhs_data);
-                rhs_data->gradient = std::make_shared<Tensor>(rhs_data->gradient ? *rhs_data->gradient + rhs_grad : rhs_grad);
+                rhs_data->gradient =
+                    std::make_shared<Tensor>(rhs_data->gradient ? *rhs_data->gradient + rhs_grad : rhs_grad);
             }
         };
     }
@@ -404,7 +410,8 @@ Tensor Tensor::exp() const {
         out.gradient_func = [self_data](const Tensor& grad) {
             // d/dx exp(x) = exp(x)
             Tensor lhs_grad = grad * self_data->exp();
-            self_data->gradient = std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
+            self_data->gradient =
+                std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
         };
     }
 
@@ -425,7 +432,8 @@ Tensor Tensor::log() const {
         out.gradient_func = [self_data](const Tensor& grad) {
             // d/dx log(x) = 1/x
             Tensor lhs_grad = grad / *self_data;
-            self_data->gradient = std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
+            self_data->gradient =
+                std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
         };
     }
 
@@ -446,7 +454,8 @@ Tensor Tensor::sqrt() const {
         out.gradient_func = [self_data, out_ptr](const Tensor& grad) {
             // d/dx sqrt(x) = 1 / (2 * sqrt(x))
             Tensor lhs_grad = grad / (*out_ptr * 2.0f);
-            self_data->gradient = std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
+            self_data->gradient =
+                std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
         };
     }
 
@@ -470,7 +479,8 @@ Tensor Tensor::abs() const {
                 (*sign.storage)[i] = val > 0.0f ? 1.0f : (val < 0.0f ? -1.0f : 0.0f);
             }
             Tensor lhs_grad = grad * sign;
-            self_data->gradient = std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
+            self_data->gradient =
+                std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
         };
     }
 
@@ -491,7 +501,8 @@ Tensor Tensor::pow(float exponent) const {
         out.gradient_func = [self_data, exponent](const Tensor& grad) {
             // d/dx x^n = n * x^(n-1)
             Tensor lhs_grad = grad * self_data->pow(exponent - 1.0f) * exponent;
-            self_data->gradient = std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
+            self_data->gradient =
+                std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
         };
     }
 
@@ -510,12 +521,14 @@ Tensor Tensor::pow(const Tensor& exp) const {
             // d/da a^b = b * a^(b-1)
             if (self_data->require_grad) {
                 Tensor lhs_grad = grad * *exp_data * self_data->pow(*exp_data - 1.0f);
-                self_data->gradient = std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
+                self_data->gradient =
+                    std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
             }
             // d/db a^b = a^b * log(a)
             if (exp_data->require_grad) {
                 Tensor rhs_grad = grad * self_data->pow(*exp_data) * self_data->log();
-                exp_data->gradient = std::make_shared<Tensor>(exp_data->gradient ? *exp_data->gradient + rhs_grad : rhs_grad);
+                exp_data->gradient =
+                    std::make_shared<Tensor>(exp_data->gradient ? *exp_data->gradient + rhs_grad : rhs_grad);
             }
         };
     }
@@ -541,7 +554,8 @@ Tensor Tensor::clip(float min, float max) const {
                 (*mask.storage)[i] = (val >= min && val <= max) ? 1.0f : 0.0f;
             }
             Tensor lhs_grad = grad * mask;
-            self_data->gradient = std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
+            self_data->gradient =
+                std::make_shared<Tensor>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
         };
     }
 
@@ -584,23 +598,14 @@ Tensor Tensor::operator>=(const Tensor& rhs) const {
     return out;
 }
 
-
 // TODO: Matt
-Tensor& Tensor::grad() {
-    return *gradient;
-}
+Tensor& Tensor::grad() { return *gradient; }
 
-const Tensor& Tensor::grad() const {
-    return *gradient;
-}
+const Tensor& Tensor::grad() const { return *gradient; }
 
-bool Tensor::has_grad() const {
-    return false;
-}
+bool Tensor::has_grad() const { return false; }
 
-void Tensor::zero_grad() {
-
-}
+void Tensor::zero_grad() {}
 
 void Tensor::backward() {}
 
