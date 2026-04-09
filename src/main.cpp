@@ -86,13 +86,13 @@ void test_copy_and_move_semantics() {
 }
 
 void test_backprop() {
-    auto a = make_shared<Tensor>(Tensor::full({1}, 0.0f, true));
-    auto b = make_shared<Tensor>(Tensor::full({1}, 1.0f, true));
-    auto c = make_shared<Tensor>(Tensor::full({1}, 1.0f, true));
-    auto d = make_shared<Tensor>(*a + b);
-    auto e = make_shared<Tensor>(*b + c);
-    auto f = make_shared<Tensor>(*d + e);
-    auto g = make_shared<Tensor>(*d + f);
+    auto a = make_shared<Tensor>(Tensor::full({1}, 100.0f, true));
+    auto b = make_shared<Tensor>(Tensor::full({1},  10.0f, true));
+    auto c = make_shared<Tensor>(Tensor::full({1},   1.0f, true));
+    auto d = a + b;
+    auto e = b + c;
+    auto f = d + e;
+    auto g = d + f;
 
     g->backward();
 

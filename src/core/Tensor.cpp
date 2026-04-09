@@ -45,12 +45,12 @@ Tensor::Tensor(const std::vector<float>& data, const std::vector<int>& shape, bo
 Tensor::Tensor(const Tensor& other)
     : storage(std::make_shared<std::vector<float>>(*other.storage)), offset(other.offset), shape(other.shape),
       strides(other.strides), require_grad(other.require_grad), is_leaf(other.is_leaf), gradient(other.gradient),
-      inputs(other.inputs), gradient_func(other.gradient_func) {}
+      inputs(other.inputs), gradient_func(other.gradient_func), gradient_func_ptr(other.gradient_func_ptr) {}
 
 Tensor::Tensor(Tensor&& other)
     : storage(std::move(other.storage)), offset(other.offset), shape(std::move(other.shape)),
       strides(std::move(other.strides)), require_grad(other.require_grad), is_leaf(other.is_leaf),
-      gradient(std::move(other.gradient)), inputs(std::move(other.inputs)), gradient_func(std::move(other.gradient_func)) {}
+      gradient(std::move(other.gradient)), inputs(std::move(other.inputs)), gradient_func(std::move(other.gradient_func)), gradient_func_ptr(std::move(other.gradient_func_ptr)) {}
 
 Tensor& Tensor::operator=(const Tensor& other) {
     if (this == &other) {
@@ -231,27 +231,25 @@ Tensor Tensor::operator+(const Tensor& rhs) const {
     return out;
 }
 
-Tensor Tensor::operator+(std::shared_ptr<Tensor> rhs_data) {
-    Tensor out = binary_op(*rhs_data, [](const float a, const float b) { return a + b; });
+std::shared_ptr<Tensor> operator+(std::shared_ptr<Tensor> lhs_data, std::shared_ptr<Tensor> rhs_data) {
+    Tensor out = lhs_data->binary_op(*rhs_data, [](const float a, const float b) { return a + b; });
 
     if (out.require_grad) {
-        std::shared_ptr<Tensor> lhs_data = shared_from_this();
-
         out.inputs = {lhs_data, rhs_data};
         out.is_leaf = false;
-        out.gradient_func = [lhs_data, rhs_data](const Tensor& grad) {
+        out.gradient_func_ptr = [lhs_data, rhs_data](std::shared_ptr<Tensor> grad) {
             // Adding should pass grad straight through both sides
             if (lhs_data->require_grad) {
-                lhs_data->gradient = std::make_shared<Tensor>(lhs_data->gradient ? *lhs_data->gradient + grad : Tensor(grad));
+                lhs_data->gradient = lhs_data->gradient ? lhs_data->gradient + grad : std::make_shared<Tensor>(*grad);
             }
 
             if (rhs_data->require_grad) {
-                rhs_data->gradient = std::make_shared<Tensor>(rhs_data->gradient ? *rhs_data->gradient + grad : Tensor(grad));
+                rhs_data->gradient = rhs_data->gradient ? rhs_data->gradient + grad : std::make_shared<Tensor>(*grad);
             }
         };
     }
 
-    return out;
+    return std::make_shared<Tensor>(out);
 }
 
 Tensor Tensor::operator-(const Tensor& rhs) const {
@@ -655,7 +653,7 @@ void Tensor::backward() {
     }
 
     // Calculate gradients
-    gradient_func(*gradient);
+    gradient_func_ptr(gradient);
     while (!computation_tensors.empty()) {
         auto tensor = computation_tensors.front();
         computation_tensors.erase(computation_tensors.begin());
@@ -672,7 +670,7 @@ void Tensor::backward() {
         }
 
         // Calculate inputs' gradients and decrement dependency counts
-        tensor->gradient_func(*tensor->gradient);
+        tensor->gradient_func_ptr(tensor->gradient);
         for (auto input : tensor->inputs) {
             input->backprop_dep_count -= 1;
         }

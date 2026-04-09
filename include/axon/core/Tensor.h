@@ -201,8 +201,8 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
     /** @brief Elementwise tensor addition */
     Tensor operator+(const Tensor& rhs) const;
 
-    /** @brief Elementwise tensor addition */
-    Tensor operator+(std::shared_ptr<Tensor> rhs_data);
+/** @brief Elementwise tensor addition */
+    friend std::shared_ptr<Tensor> operator+(std::shared_ptr<Tensor> lhs_data, std::shared_ptr<Tensor> rhs_data);
 
     /** @brief Elementwise tensor subtraction */
     Tensor operator-(const Tensor &rhs) const;
@@ -362,6 +362,7 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
     // ==================================
 
     using GradientFunc = std::function<void(const Tensor &)>;
+    using GradientFuncPtr = std::function<void(std::shared_ptr<Tensor>)>;
 
     void set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<Tensor>> &inputs);
 
@@ -382,6 +383,7 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
 
     std::vector<std::shared_ptr<Tensor>> inputs;
     GradientFunc gradient_func;
+    GradientFuncPtr gradient_func_ptr;
 
     /**
      * @brief Converts a multidimensional index to a flat storage index
@@ -415,5 +417,6 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
 };
 
 #include "core/Tensor.tpp"
+
 
 #endif // AXON_TENSOR_H
