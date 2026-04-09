@@ -5,12 +5,28 @@
 #include "loss/MSELoss.h"
 
 #include <cassert>
+#include <chrono>
 #include <cmath>
+#include <functional>
+#include <iomanip>
 #include <iostream>
+#include <string_view>
 #include <utility>
 namespace {
 
+using Clock = std::chrono::steady_clock;
+
 bool approx_equal(float a, float b, float eps = 1e-5f) { return std::fabs(a - b) <= eps; }
+
+double run_benchmark(std::string_view name, const std::function<void()>& test) {
+    const auto start = Clock::now();
+    test();
+    const auto end = Clock::now();
+
+    const auto elapsed = std::chrono::duration<double, std::micro>(end - start).count();
+    std::cout << std::left << std::setw(32) << name << " " << std::fixed << std::setprecision(2) << elapsed << " us\n";
+    return elapsed;
+}
 
 void test_shape_and_fill() {
     Tensor zero_matrix = Tensor::zeros({2, 3});
@@ -102,7 +118,7 @@ void test_mse_loss() {
 }
 
 void test_cross_entropy_loss() {
-    // Two samples with three classes; correct class gets a much larger logit
+    // Two samples with three classes, correct class gets a much larger logit
     Tensor logits({2.0f, 1.0f, 0.1f, 0.1f, 1.0f, 2.0f}, {2, 3});
     Tensor targets(std::vector<float>{0.0f, 2.0f}, std::vector<int>{2});
     CrossEntropyLoss criterion;
@@ -125,13 +141,18 @@ void test_cross_entropy_loss() {
 } // namespace
 
 int main() {
-    test_shape_and_fill();
-    test_requires_grad_flag();
-    test_inplace_arithmetic();
-    test_copy_and_move_semantics();
-    test_mse_loss();
-    test_cross_entropy_loss();
+    double total_us = 0.0;
 
+    std::cout << "Benchmark results:\n";
+    total_us += run_benchmark("test_shape_and_fill", test_shape_and_fill);
+    total_us += run_benchmark("test_requires_grad_flag", test_requires_grad_flag);
+    total_us += run_benchmark("test_inplace_arithmetic", test_inplace_arithmetic);
+    total_us += run_benchmark("test_copy_and_move_semantics", test_copy_and_move_semantics);
+    total_us += run_benchmark("test_mse_loss", test_mse_loss);
+    total_us += run_benchmark("test_cross_entropy_loss", test_cross_entropy_loss);
+
+    std::cout << std::left << std::setw(32) << "total" << " " << std::fixed << std::setprecision(2) << total_us
+              << " us\n";
     std::cout << "Pass!\n";
 
     return 0;

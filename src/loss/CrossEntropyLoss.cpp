@@ -22,7 +22,7 @@ Tensor CrossEntropyLoss::forward(const Tensor &prediction, const Tensor &target)
 
     float negativeLogLikelihoodSum = 0.0f;
     for (int sampleIndex = 0; sampleIndex < batchSize; ++sampleIndex) {
-      // Findlargest logit to apply log sum exp for num stability
+        // Findlargest logit to apply log sum exp for num stability
         float maxLogit = prediction.at({sampleIndex, 0});
         for (int classIndex = 1; classIndex < classCount; ++classIndex) {
             const float logit = prediction.at({sampleIndex, classIndex});
