@@ -10,42 +10,40 @@ namespace {
 
 bool approx_equal(float a, float b, float eps = 1e-5f) { return std::fabs(a - b) <= eps; }
 
-/*
 void test_shape_and_fill() {
-    TensorImpl zero_matrix = TensorImpl::zeros({2, 3});
-    assert(zero_matrix.ndim() == 2);
-    assert(zero_matrix.nelem() == 6);
-    assert(zero_matrix.size(0) == 2);
-    assert(zero_matrix.size(1) == 3);
-    assert(zero_matrix.get_shape()[0] == 2);
-    assert(zero_matrix.get_shape()[1] == 3);
+    Tensor zero_matrix = TensorImpl::zeros({2, 3});
+    assert(zero_matrix->ndim() == 2);
+    assert(zero_matrix->nelem() == 6);
+    assert(zero_matrix->size(0) == 2);
+    assert(zero_matrix->size(1) == 3);
+    assert(zero_matrix->get_shape()[0] == 2);
+    assert(zero_matrix->get_shape()[1] == 3);
 
-    for (int i = 0; i < zero_matrix.nelem(); ++i) {
-        assert(approx_equal(zero_matrix[i], 0.0f));
+    for (int i = 0; i < zero_matrix->nelem(); ++i) {
+        assert(approx_equal(zero_matrix->at(i), 0.0f));
     }
 
-    TensorImpl ones_matrix = TensorImpl::ones({4});
-    for (int i = 0; i < ones_matrix.nelem(); ++i) {
-        assert(approx_equal(ones_matrix[i], 1.0f));
+    Tensor ones_matrix = TensorImpl::ones({4});
+    for (int i = 0; i < ones_matrix->nelem(); ++i) {
+        assert(approx_equal(ones_matrix->at(i), 1.0f));
     }
 
-    TensorImpl full_matrix = TensorImpl::full({3}, 2.5f);
-    for (int i = 0; i < full_matrix.nelem(); ++i) {
-        assert(approx_equal(full_matrix[i], 2.5f));
+    Tensor full_matrix = TensorImpl::full({3}, 2.5f);
+    for (int i = 0; i < full_matrix->nelem(); ++i) {
+        assert(approx_equal(full_matrix->at(i), 2.5f));
     }
 }
 
 void test_requires_grad_flag() {
-    TensorImpl tensor = TensorImpl::zeros({2, 2});
-    assert(!tensor.get_require_grad());
+    Tensor tensor = TensorImpl::zeros({2, 2});
+    assert(!tensor->get_require_grad());
 
-    tensor.set_require_grad(true);
-    assert(tensor.get_require_grad());
+    tensor->set_require_grad(true);
+    assert(tensor->get_require_grad());
 
-    tensor.set_require_grad(false);
-    assert(!tensor.get_require_grad());
+    tensor->set_require_grad(false);
+    assert(!tensor->get_require_grad());
 }
-*/
 
 void test_inplace_arithmetic() {
     Tensor a = TensorImpl::full({3}, 2.0f);
