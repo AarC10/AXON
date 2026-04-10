@@ -1,14 +1,59 @@
 // NOTE THIS IS A TEMPORARY TEST FILE TO EXERCISE TENSORS AND SHOULD BE DELETED LATER
 // Maybe one day we will have a G test
 #include "core/Tensor.h"
+#include "data/CSVLoader.h"
 
 #include <cassert>
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
+#include <string>
 #include <utility>
 namespace {
 
-bool approx_equal(float a, float b, float eps = 1e-5f) { return std::fabs(a - b) <= eps; }
+bool approx_equal(float a, float b, float eps = 1e-5f) {
+    return std::fabs(a - b) <= eps;
+}
+
+void print_tensor(const Tensor &tensor, const std::string &name) {
+    std::cout << name << " shape: {";
+
+    const std::vector<int> &shape = tensor.get_shape();
+
+    for (std::size_t i = 0; i < shape.size(); ++i) {
+        std::cout << shape[i];
+
+        if (i + 1 < shape.size()) {
+            std::cout << ", ";
+        }
+    }
+
+    std::cout << "}\n";
+
+    if (shape.size() != 2) {
+        for (int i = 0; i < tensor.nelem(); ++i) {
+            std::cout << tensor[i] << "\n";
+        }
+
+        return;
+    }
+
+    int rows = shape[0];
+    int cols = shape[1];
+
+    for (int row = 0; row < rows; ++row) {
+        for (int col = 0; col < cols; ++col) {
+            int index = row * cols + col;
+            std::cout << tensor[index];
+
+            if (col + 1 < cols) {
+                std::cout << ", ";
+            }
+        }
+
+        std::cout << "\n";
+    }
+}
 
 void test_shape_and_fill() {
     Tensor zero_matrix = Tensor::zeros({2, 3});
@@ -87,13 +132,22 @@ void test_copy_and_move_semantics() {
 
 } // namespace
 
-int main() {
+int main(int argc, char **argv) {
     test_shape_and_fill();
     test_requires_grad_flag();
     test_inplace_arithmetic();
     test_copy_and_move_semantics();
 
     std::cout << "Pass!\n";
+
+    if (argc >= 3) {
+        std::string path = argv[1];
+        int label_col = std::stoi(argv[2]);
+        std::pair<Tensor, Tensor> loaded = axon::data::load_csv(path, label_col);
+
+        print_tensor(loaded.first, "X");
+        print_tensor(loaded.second, "y");
+    }
 
     return 0;
 }
