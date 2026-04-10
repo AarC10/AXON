@@ -164,10 +164,7 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
     // ==================================
 
     template <typename Operation>
-    TensorImpl binary_op(const TensorImpl &rhs, Operation op) const;
-
-    /** @brief Elementwise tensor addition */
-    TensorImpl operator+(const TensorImpl& rhs) const;
+    Tensor binary_op(const ConstTensor &rhs, Operation op) const;
 
     /** @brief Elementwise tensor addition */
     friend Tensor operator+(Tensor lhs_data, Tensor rhs_data);
@@ -260,22 +257,22 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
 
     // ======== Comparison Operations ========
     /** @brief Elementwise equality comparison */
-    TensorImpl operator==(const TensorImpl &rhs) const;
+    friend Tensor operator==(const ConstTensor& lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise inequality comparison */
-    TensorImpl operator!=(const TensorImpl &rhs) const;
+    friend Tensor operator!=(const ConstTensor& lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise LT comparison */
-    TensorImpl operator<(const TensorImpl &rhs) const;
+    friend Tensor operator<(const ConstTensor& lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise LTE comparison */
-    TensorImpl operator<=(const TensorImpl &rhs) const;
+    friend Tensor operator<=(const ConstTensor& lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise GT comparison */
-    TensorImpl operator>(const TensorImpl &rhs) const;
+    friend Tensor operator>(const ConstTensor& lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise GTE comparison */
-    TensorImpl operator>=(const TensorImpl &rhs) const;
+    friend Tensor operator>=(const ConstTensor& lhs, const ConstTensor &rhs);
 
     // ==================================
     // ====== Activation Functions ======
