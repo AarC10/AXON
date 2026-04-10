@@ -45,32 +45,32 @@ void test_requires_grad_flag() {
     tensor.set_require_grad(false);
     assert(!tensor.get_require_grad());
 }
+*/
 
 void test_inplace_arithmetic() {
-    TensorImpl a = TensorImpl::full({3}, 2.0f);
-    TensorImpl b = TensorImpl::full({3}, 3.0f);
+    Tensor a = TensorImpl::full({3}, 2.0f);
+    Tensor b = TensorImpl::full({3}, 3.0f);
 
     a += b; // 5
-    for (int i = 0; i < a.nelem(); ++i) {
-        assert(approx_equal(a[i], 5.0f));
+    for (int i = 0; i < a->nelem(); ++i) {
+        assert(approx_equal(a->at(i), 5.0f));
     }
 
     a -= TensorImpl::full({3}, 1.5f); // 3.5
-    for (int i = 0; i < a.nelem(); ++i) {
-        assert(approx_equal(a[i], 3.5f));
+    for (int i = 0; i < a->nelem(); ++i) {
+        assert(approx_equal(a->at(i), 3.5f));
     }
 
     a *= TensorImpl::full({3}, 2.0f); // 7
-    for (int i = 0; i < a.nelem(); ++i) {
-        assert(approx_equal(a[i], 7.0f));
+    for (int i = 0; i < a->nelem(); ++i) {
+        assert(approx_equal(a->at(i), 7.0f));
     }
 
     a /= TensorImpl::full({3}, 2.0f); // 3.5
-    for (int i = 0; i < a.nelem(); ++i) {
-        assert(approx_equal(a[i], 3.5f));
+    for (int i = 0; i < a->nelem(); ++i) {
+        assert(approx_equal(a->at(i), 3.5f));
     }
 }
-*/
 
 void test_copy_and_move_semantics() {
     Tensor src = TensorImpl::full({2}, 9.0f);

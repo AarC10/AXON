@@ -266,68 +266,68 @@ TensorImpl TensorImpl::operator*(const TensorImpl& rhs) const {
 //
 //TensorImpl TensorImpl::operator/(float scalar) const { return *this / full(shape, scalar); }
 
-TensorImpl& TensorImpl::operator+=(const TensorImpl& rhs) {
-    if (require_grad && !is_leaf) {
+Tensor& operator+=(Tensor& lhs, const ConstTensor& rhs) {
+    if (lhs->require_grad && !lhs->is_leaf) {
         throw std::runtime_error("In-place op on non-leaf tensor that requires grad will corrupt the autograd graph");
     }
 
-    if (shape != rhs.shape) {
+    if (lhs->shape != rhs->shape) {
         throw std::invalid_argument("In-place op requires identical shapes");
     }
 
-    for (int i = 0; i < nelem(); ++i) {
-        (*storage)[offset + i] += (*rhs.storage)[rhs.offset + i];
+    for (int i = 0; i < lhs->nelem(); ++i) {
+        (*lhs->storage)[lhs->offset + i] += (*rhs->storage)[rhs->offset + i];
     }
 
-    return *this;
+    return lhs;
 }
 
-TensorImpl& TensorImpl::operator-=(const TensorImpl& rhs) {
-    if (require_grad && !is_leaf) {
+Tensor& operator-=(Tensor& lhs, const ConstTensor& rhs) {
+    if (lhs->require_grad && !lhs->is_leaf) {
         throw std::runtime_error("In-place op on non-leaf tensor that requires grad will corrupt the autograd graph");
     }
 
-    if (shape != rhs.shape) {
+    if (lhs->shape != rhs->shape) {
         throw std::invalid_argument("In-place op requires identical shapes");
     }
 
-    for (int i = 0; i < nelem(); ++i) {
-        (*storage)[offset + i] -= (*rhs.storage)[rhs.offset + i];
+    for (int i = 0; i < lhs->nelem(); ++i) {
+        (*lhs->storage)[lhs->offset + i] -= (*rhs->storage)[rhs->offset + i];
     }
 
-    return *this;
+    return lhs;
 }
 
-TensorImpl& TensorImpl::operator*=(const TensorImpl& rhs) {
-    if (require_grad && !is_leaf) {
+Tensor& operator*=(Tensor& lhs, const ConstTensor& rhs) {
+    if (lhs->require_grad && !lhs->is_leaf) {
         throw std::runtime_error("In-place op on non-leaf tensor that requires grad will corrupt the autograd graph");
     }
 
-    if (shape != rhs.shape) {
+    if (lhs->shape != rhs->shape) {
         throw std::invalid_argument("In-place op requires identical shapes");
     }
 
-    for (int i = 0; i < nelem(); ++i) {
-        (*storage)[offset + i] *= (*rhs.storage)[rhs.offset + i];
+    for (int i = 0; i < lhs->nelem(); ++i) {
+        (*lhs->storage)[lhs->offset + i] *= (*rhs->storage)[rhs->offset + i];
     }
 
-    return *this;
+    return lhs;
 }
 
-TensorImpl& TensorImpl::operator/=(const TensorImpl& rhs) {
-    if (require_grad && !is_leaf) {
+Tensor& operator/=(Tensor& lhs, const ConstTensor& rhs) {
+    if (lhs->require_grad && !lhs->is_leaf) {
         throw std::runtime_error("In-place op on non-leaf tensor that requires grad will corrupt the autograd graph");
     }
 
-    if (shape != rhs.shape) {
+    if (lhs->shape != rhs->shape) {
         throw std::invalid_argument("In-place op requires identical shapes");
     }
 
-    for (int i = 0; i < nelem(); ++i) {
-        (*storage)[offset + i] /= (*rhs.storage)[rhs.offset + i];
+    for (int i = 0; i < lhs->nelem(); ++i) {
+        (*lhs->storage)[lhs->offset + i] /= (*rhs->storage)[rhs->offset + i];
     }
 
-    return *this;
+    return lhs;
 }
 
 //TensorImpl operator+(float scalar, const TensorImpl& tensor) { return tensor + scalar; }

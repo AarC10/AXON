@@ -6,6 +6,7 @@
 
 class TensorImpl;
 using Tensor = std::shared_ptr<TensorImpl>;
+using ConstTensor = std::shared_ptr<const TensorImpl>;
 
 class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
   public:
@@ -168,7 +169,7 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
     /** @brief Elementwise tensor addition */
     TensorImpl operator+(const TensorImpl& rhs) const;
 
-/** @brief Elementwise tensor addition */
+    /** @brief Elementwise tensor addition */
     friend Tensor operator+(Tensor lhs_data, Tensor rhs_data);
 
     ///** @brief Elementwise tensor subtraction */
@@ -196,16 +197,16 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
     //TensorImpl operator/(float scalar) const;
 
     /** @brief In-place elementwise tensor addition */
-    TensorImpl &operator+=(const TensorImpl &rhs);
+    friend Tensor &operator+=(Tensor& lhs, const ConstTensor &rhs);
 
     /** @brief In-place elementwise tensor subtraction */
-    TensorImpl &operator-=(const TensorImpl &rhs);
+    friend Tensor &operator-=(Tensor& lhs, const ConstTensor &rhs);
 
     /** @brief In-place elementwise tensor multiplication */
-    TensorImpl &operator*=(const TensorImpl &rhs);
+    friend Tensor &operator*=(Tensor& lhs, const ConstTensor &rhs);
 
     /** @brief In-place elementwise tensor division */
-    TensorImpl &operator/=(const TensorImpl &rhs);
+    friend Tensor &operator/=(Tensor& lhs, const ConstTensor &rhs);
 
     ///** @brief Adds a tensor to a lhs scalar */
     //friend TensorImpl operator+(float scalar, const TensorImpl &tensor);
