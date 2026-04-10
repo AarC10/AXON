@@ -53,5 +53,3 @@ target_include_directories(axon INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/ax
 # Below is temporary for now
 add_executable(axon_test src/main.cpp)
 target_link_libraries(axon_test PRIVATE axon)
-
-

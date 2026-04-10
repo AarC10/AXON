@@ -307,7 +307,7 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
      * Get the gradient accumulated tensor
      * @return Reference to gradient tensor
      */
-    Tensor& grad();
+    Tensor &grad();
 
     /**
      * @brief Get whether the tensor has a gradient
