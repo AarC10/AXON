@@ -146,14 +146,14 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
      * @param idx Flat element index
      * @return Element value
      */
-    float operator[](int idx) const;
+    float at(int idx) const;
 
     /**
      * @brief Returns a mutable reference at a flat index
      * @param idx Flat element index
      * @return Mutable reference to the addressed element
      */
-    float &operator[](int idx);
+    float& at(int idx);
     // ==================================
     // ======= Shape Manipulation =======
     // ==================================
@@ -303,13 +303,7 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
      * Get the gradient accumulated tensor
      * @return Reference to gradient tensor
      */
-    TensorImpl& grad();
-
-    /**
-     * @brief Get a const ref to the gradient accumulated tensor
-     * @return Const ref to gradient tensor
-     */
-    const TensorImpl& grad() const;
+    Tensor& grad();
 
     /**
      * @brief Get whether the tensor has a gradient

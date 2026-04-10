@@ -131,9 +131,9 @@ float TensorImpl::at(const std::vector<int>& idx) const { return (*storage)[flat
 
 float& TensorImpl::at(const std::vector<int>& idx) { return (*storage)[flat_index(idx)]; }
 
-float TensorImpl::operator[](int idx) const { return (*storage)[offset + idx]; }
+float TensorImpl::at(int idx) const { return (*storage)[offset + idx]; }
 
-float& TensorImpl::operator[](int idx) { return (*storage)[offset + idx]; }
+float& TensorImpl::at(int idx) { return (*storage)[offset + idx]; }
 
 TensorImpl TensorImpl::operator+(const TensorImpl& rhs) const {
     TensorImpl out = binary_op(rhs, [](const float a, const float b) { return a + b; });
@@ -536,12 +536,8 @@ TensorImpl TensorImpl::operator>=(const TensorImpl& rhs) const {
 
 
 // TODO: Matt
-TensorImpl& TensorImpl::grad() {
-    return *gradient;
-}
-
-const TensorImpl& TensorImpl::grad() const {
-    return *gradient;
+Tensor& TensorImpl::grad() {
+    return gradient;
 }
 
 bool TensorImpl::has_grad() const {

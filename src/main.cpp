@@ -70,22 +70,22 @@ void test_inplace_arithmetic() {
         assert(approx_equal(a[i], 3.5f));
     }
 }
+*/
 
 void test_copy_and_move_semantics() {
-    TensorImpl src = TensorImpl::full({2}, 9.0f);
-    TensorImpl copied(src);
-    assert(approx_equal(copied[0], 9.0f));
-    assert(approx_equal(copied[1], 9.0f));
+    Tensor src = TensorImpl::full({2}, 9.0f);
+    Tensor copied = TensorImpl::copy(src);
+    assert(approx_equal(copied->at(0), 9.0f));
+    assert(approx_equal(copied->at(1), 9.0f));
 
-    copied[0] = 4.0f;
-    assert(approx_equal(src[0], 9.0f));
-    assert(approx_equal(copied[0], 4.0f));
+    copied->at(0) = 4.0f;
+    assert(approx_equal(src->at(0), 9.0f));
+    assert(approx_equal(copied->at(0), 4.0f));
 
-    TensorImpl moved(std::move(copied));
-    assert(approx_equal(moved[0], 4.0f));
-    assert(approx_equal(moved[1], 9.0f));
+    Tensor moved(std::move(copied));
+    assert(approx_equal(moved->at(0), 4.0f));
+    assert(approx_equal(moved->at(1), 9.0f));
 }
-*/
 
 void test_backprop() {
     auto a = TensorImpl::full({1}, 100.0f, true);
@@ -98,13 +98,13 @@ void test_backprop() {
 
     g->backward();
 
-    assert(approx_equal(a->grad()[0], 2.0f));
-    assert(approx_equal(b->grad()[0], 3.0f));
-    assert(approx_equal(c->grad()[0], 1.0f));
-    assert(approx_equal(d->grad()[0], 2.0f));
-    assert(approx_equal(e->grad()[0], 1.0f));
-    assert(approx_equal(f->grad()[0], 1.0f));
-    assert(approx_equal(g->grad()[0], 1.0f));
+    assert(approx_equal(a->grad()->at(0), 2.0f));
+    assert(approx_equal(b->grad()->at(0), 3.0f));
+    assert(approx_equal(c->grad()->at(0), 1.0f));
+    assert(approx_equal(d->grad()->at(0), 2.0f));
+    assert(approx_equal(e->grad()->at(0), 1.0f));
+    assert(approx_equal(f->grad()->at(0), 1.0f));
+    assert(approx_equal(g->grad()->at(0), 1.0f));
 }
 
 } // namespace
@@ -113,7 +113,7 @@ int main() {
     //test_shape_and_fill();
     //test_requires_grad_flag();
     //test_inplace_arithmetic();
-    //test_copy_and_move_semantics();
+    test_copy_and_move_semantics();
     test_backprop();
 
     std::cout << "Pass!\n";
