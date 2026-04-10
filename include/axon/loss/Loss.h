@@ -1,7 +1,7 @@
 #ifndef AXON_LOSS_H
 #define AXON_LOSS_H
 
-#include "core/Tensor.h"
+#include "core/TensorImpl.h"
 
 /**
  * @brief Abstract base class for loss functions
@@ -14,7 +14,7 @@ class Loss {
      * @param target Ground-truth tensor
      * @return Scalar loss tensor
      */
-    virtual Tensor forward(const Tensor &prediction, const Tensor &target) = 0;
+    virtual TensorImpl forward(const TensorImpl &prediction, const TensorImpl &target) = 0;
 };
 
 #endif // AXON_LOSS_H

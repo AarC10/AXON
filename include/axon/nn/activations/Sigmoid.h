@@ -1,7 +1,7 @@
 #ifndef AXON_SIGMOID_H
 #define AXON_SIGMOID_H
 
-#include "core/Tensor.h"
+#include "core/TensorImpl.h"
 #include "nn/Module.h"
 
 /**
@@ -13,7 +13,7 @@ class Sigmoid : public Module {
     Sigmoid() = default;
 
     /** @copydoc Module::forward */
-    Tensor forward(const Tensor &input) override;
+    TensorImpl forward(const TensorImpl &input) override;
 };
 
 #endif // AXON_SIGMOID_H

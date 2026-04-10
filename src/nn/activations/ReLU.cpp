@@ -1,3 +1,3 @@
 #include "nn/activations/ReLU.h"
 
-Tensor ReLU::forward(const Tensor &input) { return {}; }
+TensorImpl ReLU::forward(const TensorImpl &input) { return {}; }

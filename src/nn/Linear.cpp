@@ -3,6 +3,6 @@
 Linear::Linear(int in_features, int out_features, bool bias)
     : in_features(in_features), out_features(out_features), use_bias(bias) {}
 
-Tensor Linear::forward(const Tensor &input) { return {}; }
+TensorImpl Linear::forward(const TensorImpl &input) { return {}; }
 
-std::vector<std::shared_ptr<Tensor>> Linear::parameters() { return {}; }
+std::vector<std::shared_ptr<TensorImpl>> Linear::parameters() { return {}; }

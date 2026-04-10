@@ -4,17 +4,21 @@
 #include <memory>
 #include <vector>
 
-class Tensor : public std::enable_shared_from_this<Tensor> {
+class TensorImpl;
+using Tensor = std::shared_ptr<TensorImpl>;
+
+class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
   public:
+
     /** @brief Constructs an empty tensor */
-    Tensor() = default;
+    TensorImpl() = default;
 
     /**
      * @brief Constructs a zero-initialized tensor with the provided shape
      * @param shape Dimensions of the tensor
      * @param require_grad Whether gradients should be tracked
      */
-    explicit Tensor(const std::vector<int> &shape, bool require_grad = false);
+    explicit TensorImpl(const std::vector<int> &shape, bool require_grad = false);
 
     /**
      * @brief Constructs a tensor from existing data and shape
@@ -22,36 +26,36 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
      * @param shape Dimensions of the tensor
      * @param require_grad Whether gradients should be tracked
      */
-    Tensor(const std::vector<float> &data, const std::vector<int> &shape, bool require_grad = false);
+    TensorImpl(const std::vector<float> &data, const std::vector<int> &shape, bool require_grad = false);
 
     /**
      * @brief Copy-constructs a tensor
-     * @param other Tensor to copy from
+     * @param other TensorImpl to copy from
      */
-    Tensor(const Tensor &other);
+    TensorImpl(const TensorImpl &other);
 
     /**
      * @brief Move-constructs a tensor
-     * @param other Tensor to move from
+     * @param other TensorImpl to move from
      */
-    Tensor(Tensor &&other);
+    TensorImpl(TensorImpl &&other);
 
     /**
      * @brief Copy-assigns from another tensor
-     * @param other Tensor to copy from
+     * @param other TensorImpl to copy from
      * @return Reference to this tensor
      */
-    Tensor &operator=(const Tensor &other);
+    TensorImpl &operator=(const TensorImpl &other);
 
     /**
      * @brief Move-assigns from another tensor
-     * @param other Tensor to move from
+     * @param other TensorImpl to move from
      * @return Reference to this tensor
      */
-    Tensor &operator=(Tensor &&other);
+    TensorImpl &operator=(TensorImpl &&other);
 
     /** @brief Destroys the tensor */
-    ~Tensor() = default;
+    ~TensorImpl() = default;
 
     // ==================================
     // ======== Static Factories ========
@@ -63,7 +67,7 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
      * @param require_grad Whether to track gradients for this tensor
      * @return A zero-initialized tensor with the requested shape
      */
-    static Tensor zeros(const std::vector<int> &shape, bool require_grad = false);
+    static TensorImpl zeros(const std::vector<int> &shape, bool require_grad = false);
 
     /**
      * @brief Creates a tensor filled with ones
@@ -71,7 +75,7 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
      * @param require_grad Whether to track gradients for this tensor
      * @return A one-initialized tensor with the requested shape
      */
-    static Tensor ones(const std::vector<int> &shape, bool require_grad = false);
+    static TensorImpl ones(const std::vector<int> &shape, bool require_grad = false);
 
     /**
      * @brief Creates a tensor filled with a value
@@ -80,7 +84,7 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
      * @param require_grad Whether to track gradients for this tensor
      * @return A uniformly initialized tensor with the requested shape
      */
-    static Tensor full(const std::vector<int> &shape, float value, bool require_grad = false);
+    static TensorImpl full(const std::vector<int> &shape, float value, bool require_grad = false);
 
     /**
      * @brief Creates a tensor with values sampled from a standard normal distribution
@@ -88,7 +92,7 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
      * @param require_grad Whether to track gradients for this tensor
      * @return A randomly initialized tensor sampled from a normal distribution
      */
-    static Tensor randn(const std::vector<int> &shape, bool require_grad = false);
+    static TensorImpl randn(const std::vector<int> &shape, bool require_grad = false);
 
     /**
      * @brief Creates a tensor with values sampled from a uniform distribution over [0, 1)
@@ -96,7 +100,7 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
      * @param require_grad Whether to track gradients for this tensor
      * @return A randomly initialized tensor sampled from a uniform distribution
      */
-    static Tensor rand(const std::vector<int> &shape, bool require_grad = false);
+    static TensorImpl rand(const std::vector<int> &shape, bool require_grad = false);
 
     /**
      * @brief Creates an identity matrix tensor of size n x n
@@ -104,7 +108,7 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
      * @param require_grad Whether to track gradients for this tensor
      * @return An identity matrix tensor
      */
-    static Tensor eye(int n, bool require_grad = false);
+    static TensorImpl eye(int n, bool require_grad = false);
 
     /**
      * @brief Creates a 1D tensor with evenly spaced values in [start, stop)
@@ -114,7 +118,7 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
      * @param require_grad Whether to track gradients for this tensor
      * @return A 1D tensor containing the generated range
      */
-    static Tensor arange(float start, float stop, float step = 1.0f, bool require_grad = false);
+    static TensorImpl arange(float start, float stop, float step = 1.0f, bool require_grad = false);
     // ==================================
     // ============== Shape =============
     // ==================================
@@ -196,91 +200,91 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
     // ==================================
 
     template <typename Operation>
-    Tensor binary_op(const Tensor &rhs, Operation op) const;
+    TensorImpl binary_op(const TensorImpl &rhs, Operation op) const;
 
     /** @brief Elementwise tensor addition */
-    Tensor operator+(const Tensor& rhs) const;
+    TensorImpl operator+(const TensorImpl& rhs) const;
 
 /** @brief Elementwise tensor addition */
-    friend std::shared_ptr<Tensor> operator+(std::shared_ptr<Tensor> lhs_data, std::shared_ptr<Tensor> rhs_data);
+    friend Tensor operator+(Tensor lhs_data, Tensor rhs_data);
 
     /** @brief Elementwise tensor subtraction */
-    Tensor operator-(const Tensor &rhs) const;
+    TensorImpl operator-(const TensorImpl &rhs) const;
 
     /** @brief Elementwise tensor multiplication */
-    Tensor operator*(const Tensor &rhs) const;
+    TensorImpl operator*(const TensorImpl &rhs) const;
 
     /** @brief Elementwise tensor division */
-    Tensor operator/(const Tensor &rhs) const;
+    TensorImpl operator/(const TensorImpl &rhs) const;
 
     /** @brief Elementwise unary negation */
-    Tensor operator-() const;
+    TensorImpl operator-() const;
 
     /** @brief Adds a scalar to every element */
-    Tensor operator+(float scalar) const;
+    TensorImpl operator+(float scalar) const;
 
     /** @brief Subtracts a scalar from every element */
-    Tensor operator-(float scalar) const;
+    TensorImpl operator-(float scalar) const;
 
     /** @brief Multiplies every element by a scalar */
-    Tensor operator*(float scalar) const;
+    TensorImpl operator*(float scalar) const;
 
     /** @brief Divides every element by a scalar */
-    Tensor operator/(float scalar) const;
+    TensorImpl operator/(float scalar) const;
 
     /** @brief In-place elementwise tensor addition */
-    Tensor &operator+=(const Tensor &rhs);
+    TensorImpl &operator+=(const TensorImpl &rhs);
 
     /** @brief In-place elementwise tensor subtraction */
-    Tensor &operator-=(const Tensor &rhs);
+    TensorImpl &operator-=(const TensorImpl &rhs);
 
     /** @brief In-place elementwise tensor multiplication */
-    Tensor &operator*=(const Tensor &rhs);
+    TensorImpl &operator*=(const TensorImpl &rhs);
 
     /** @brief In-place elementwise tensor division */
-    Tensor &operator/=(const Tensor &rhs);
+    TensorImpl &operator/=(const TensorImpl &rhs);
 
     /** @brief Adds a tensor to a lhs scalar */
-    friend Tensor operator+(float scalar, const Tensor &tensor);
+    friend TensorImpl operator+(float scalar, const TensorImpl &tensor);
 
     /** @brief Subtracts a tensor from a lhs scalar   */
-    friend Tensor operator-(float scalar, const Tensor &tensor);
+    friend TensorImpl operator-(float scalar, const TensorImpl &tensor);
 
     /** @brief Multiplies a lhs scalar by a tensor */
-    friend Tensor operator*(float scalar, const Tensor &tensor);
+    friend TensorImpl operator*(float scalar, const TensorImpl &tensor);
 
     /** @brief Divides a lhs scalar by a tensor */
-    friend Tensor operator/(float scalar, const Tensor &tensor);
+    friend TensorImpl operator/(float scalar, const TensorImpl &tensor);
 
     // ==================================
     // ======== Elementwise Math ========
     // ==================================
 
     /** @brief Elementwise exponential */
-    Tensor exp() const;
+    TensorImpl exp() const;
 
     /** @brief Elementwise natural logarithm */
-    Tensor log() const;
+    TensorImpl log() const;
 
     /** @brief Elementwise square root */
-    Tensor sqrt() const;
+    TensorImpl sqrt() const;
 
     /** @brief Elementwise absolute value */
-    Tensor abs() const;
+    TensorImpl abs() const;
 
     /**
      * @brief Raises each element to a scalar exponent
      * @param exponent Scalar exponent
      * @return Result tensor
      */
-    Tensor pow(float exponent) const;
+    TensorImpl pow(float exponent) const;
 
     /**
      * @brief Raises each element to tensor-provided exponents
      * @param exp Elementwise exponents
      * @return Result tensor
      */
-    Tensor pow(const Tensor &exp) const;
+    TensorImpl pow(const TensorImpl &exp) const;
 
     /**
      * @brief Clamps values to a closed interval
@@ -288,26 +292,26 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
      * @param max Upper bound
      * @return Clipped tensor
      */
-    Tensor clip(float min, float max) const;
+    TensorImpl clip(float min, float max) const;
 
     // ======== Comparison Operations ========
     /** @brief Elementwise equality comparison */
-    Tensor operator==(const Tensor &rhs) const;
+    TensorImpl operator==(const TensorImpl &rhs) const;
 
     /** @brief Elementwise inequality comparison */
-    Tensor operator!=(const Tensor &rhs) const;
+    TensorImpl operator!=(const TensorImpl &rhs) const;
 
     /** @brief Elementwise LT comparison */
-    Tensor operator<(const Tensor &rhs) const;
+    TensorImpl operator<(const TensorImpl &rhs) const;
 
     /** @brief Elementwise LTE comparison */
-    Tensor operator<=(const Tensor &rhs) const;
+    TensorImpl operator<=(const TensorImpl &rhs) const;
 
     /** @brief Elementwise GT comparison */
-    Tensor operator>(const Tensor &rhs) const;
+    TensorImpl operator>(const TensorImpl &rhs) const;
 
     /** @brief Elementwise GTE comparison */
-    Tensor operator>=(const Tensor &rhs) const;
+    TensorImpl operator>=(const TensorImpl &rhs) const;
 
     // ==================================
     // ====== Activation Functions ======
@@ -336,13 +340,13 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
      * Get the gradient accumulated tensor
      * @return Reference to gradient tensor
      */
-    Tensor& grad();
+    TensorImpl& grad();
 
     /**
      * @brief Get a const ref to the gradient accumulated tensor
      * @return Const ref to gradient tensor
      */
-    const Tensor& grad() const;
+    const TensorImpl& grad() const;
 
     /**
      * @brief Get whether the tensor has a gradient
@@ -361,10 +365,10 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
     // ======== Autograd Handling ========
     // ==================================
 
-    using GradientFunc = std::function<void(const Tensor &)>;
-    using GradientFuncPtr = std::function<void(std::shared_ptr<Tensor>)>;
+    using GradientFunc = std::function<void(const TensorImpl &)>;
+    using GradientFuncPtr = std::function<void(std::shared_ptr<TensorImpl>)>;
 
-    void set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<Tensor>> &inputs);
+    void set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<TensorImpl>> &inputs);
 
     bool get_is_leaf() const;
 
@@ -378,10 +382,10 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
     bool require_grad = false;
     bool is_leaf = true;
 
-    std::shared_ptr<Tensor> gradient;
+    Tensor gradient;
     uint backprop_dep_count = 0;
 
-    std::vector<std::shared_ptr<Tensor>> inputs;
+    std::vector<Tensor> inputs;
     GradientFunc gradient_func;
     GradientFuncPtr gradient_func_ptr;
 
@@ -416,7 +420,7 @@ class Tensor : public std::enable_shared_from_this<Tensor> {
     static std::vector<int> broadcast_shape(const std::vector<int> &shape_one, const std::vector<int> &shape_two);
 };
 
-#include "core/Tensor.tpp"
+#include "core/TensorImpl.tpp"
 
 
 #endif // AXON_TENSOR_H

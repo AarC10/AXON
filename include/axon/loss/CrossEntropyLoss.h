@@ -1,7 +1,7 @@
 #ifndef AXON_CROSSENTROPYLOSS_H
 #define AXON_CROSSENTROPYLOSS_H
 
-#include "core/Tensor.h"
+#include "core/TensorImpl.h"
 #include "loss/Loss.h"
 
 /**
@@ -13,7 +13,7 @@ class CrossEntropyLoss : public Loss {
     CrossEntropyLoss() = default;
 
     /** @copydoc Loss::forward */
-    Tensor forward(const Tensor &prediction, const Tensor &target) override;
+    TensorImpl forward(const TensorImpl &prediction, const TensorImpl &target) override;
 };
 
 #endif // AXON_CROSSENTROPYLOSS_H

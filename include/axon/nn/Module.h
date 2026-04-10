@@ -1,7 +1,7 @@
 #ifndef AXON_MODULE_H
 #define AXON_MODULE_H
 
-#include "core/Tensor.h"
+#include "core/TensorImpl.h"
 
 #include <memory>
 #include <vector>
@@ -22,13 +22,13 @@ class Module {
      * @param input Input tensor
      * @return Output tensor
      */
-    virtual Tensor forward(const Tensor &input) = 0;
+    virtual TensorImpl forward(const TensorImpl &input) = 0;
 
     /**
      * @brief Returns all learnable parameters of the module
      * @return Vector of shared pointers to parameter tensors
      */
-    virtual std::vector<std::shared_ptr<Tensor>> parameters();
+    virtual std::vector<std::shared_ptr<TensorImpl>> parameters();
 
     /**
      * @brief Zeroes the gradients of all learnable parameters
