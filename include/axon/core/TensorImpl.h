@@ -169,29 +169,29 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
     /** @brief Elementwise tensor addition */
     friend Tensor operator+(const Tensor& lhs, const Tensor& rhs);
 
-    ///** @brief Elementwise tensor subtraction */
-    //TensorImpl operator-(const TensorImpl &rhs) const;
+    /** @brief Elementwise tensor subtraction */
+    friend Tensor operator-(const Tensor& lhs, const Tensor& rhs);
 
     /** @brief Elementwise tensor multiplication */
-    TensorImpl operator*(const TensorImpl &rhs) const;
+    friend Tensor operator*(const Tensor& lhs, const Tensor& rhs);
 
-    ///** @brief Elementwise tensor division */
-    //TensorImpl operator/(const TensorImpl &rhs) const;
+    /** @brief Elementwise tensor division */
+    friend Tensor operator/(const Tensor& lhs, const Tensor& rhs);
 
-    ///** @brief Elementwise unary negation */
-    //TensorImpl operator-() const;
+    /** @brief Elementwise unary negation */
+    friend Tensor operator-(const Tensor& tensor);
 
-    ///** @brief Adds a scalar to every element */
-    //TensorImpl operator+(float scalar) const;
+    /** @brief Adds a scalar to every element */
+    friend Tensor operator+(const Tensor& tensor, float scalar);
 
-    ///** @brief Subtracts a scalar from every element */
-    //TensorImpl operator-(float scalar) const;
+    /** @brief Subtracts a scalar from every element */
+    friend Tensor operator-(const Tensor& tensor, float scalar);
 
-    ///** @brief Multiplies every element by a scalar */
-    //TensorImpl operator*(float scalar) const;
+    /** @brief Multiplies every element by a scalar */
+    friend Tensor operator*(const Tensor& tensor, float scalar);
 
-    ///** @brief Divides every element by a scalar */
-    //TensorImpl operator/(float scalar) const;
+    /** @brief Divides every element by a scalar */
+    friend Tensor operator/(const Tensor& tensor, float scalar);
 
     /** @brief In-place elementwise tensor addition */
     friend Tensor &operator+=(Tensor& lhs, const ConstTensor &rhs);
@@ -205,17 +205,17 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
     /** @brief In-place elementwise tensor division */
     friend Tensor &operator/=(Tensor& lhs, const ConstTensor &rhs);
 
-    ///** @brief Adds a tensor to a lhs scalar */
-    //friend TensorImpl operator+(float scalar, const TensorImpl &tensor);
+    /** @brief Adds a tensor to a lhs scalar */
+    friend Tensor operator+(float scalar, const Tensor& tensor);
 
-    ///** @brief Subtracts a tensor from a lhs scalar   */
-    //friend TensorImpl operator-(float scalar, const TensorImpl &tensor);
+    /** @brief Subtracts a tensor from a lhs scalar   */
+    friend Tensor operator-(float scalar, const Tensor& tensor);
 
-    ///** @brief Multiplies a lhs scalar by a tensor */
-    //friend TensorImpl operator*(float scalar, const TensorImpl &tensor);
+    /** @brief Multiplies a lhs scalar by a tensor */
+    friend Tensor operator*(float scalar, const Tensor& tensor);
 
-    ///** @brief Divides a lhs scalar by a tensor */
-    //friend TensorImpl operator/(float scalar, const TensorImpl &tensor);
+    /** @brief Divides a lhs scalar by a tensor */
+    friend Tensor operator/(float scalar, const Tensor& tensor);
 
     // ==================================
     // ======== Elementwise Math ========
