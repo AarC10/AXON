@@ -135,20 +135,20 @@ float TensorImpl::at(int idx) const { return (*storage)[offset + idx]; }
 
 float& TensorImpl::at(int idx) { return (*storage)[offset + idx]; }
 
-Tensor operator+(Tensor lhs_data, Tensor rhs_data) {
-    Tensor out = lhs_data->binary_op(rhs_data, [](const float a, const float b) { return a + b; });
+Tensor operator+(const Tensor& lhs, const Tensor& rhs) {
+    Tensor out = lhs->binary_op(rhs, [](const float a, const float b) { return a + b; });
 
     if (out->require_grad) {
-        out->inputs = {lhs_data, rhs_data};
+        out->inputs = {lhs, rhs};
         out->is_leaf = false;
-        out->gradient_func_ptr = [lhs_data, rhs_data](Tensor grad) {
+        out->gradient_func = [lhs, rhs](const Tensor& grad) {
             // Adding should pass grad straight through both sides
-            if (lhs_data->require_grad) {
-                lhs_data->gradient = lhs_data->gradient ? lhs_data->gradient + grad : grad;
+            if (lhs->require_grad) {
+                lhs->gradient = lhs->gradient ? lhs->gradient + grad : grad;
             }
 
-            if (rhs_data->require_grad) {
-                rhs_data->gradient = rhs_data->gradient ? rhs_data->gradient + grad : grad;
+            if (rhs->require_grad) {
+                rhs->gradient = rhs->gradient ? rhs->gradient + grad : grad;
             }
         };
     }
@@ -553,7 +553,7 @@ void TensorImpl::backward() {
     }
 
     // Calculate gradients
-    gradient_func_ptr(gradient);
+    gradient_func(gradient);
     while (!computation_tensors.empty()) {
         auto tensor = computation_tensors.front();
         computation_tensors.erase(computation_tensors.begin());
@@ -570,7 +570,7 @@ void TensorImpl::backward() {
         }
 
         // Calculate inputs' gradients and decrement dependency counts
-        tensor->gradient_func_ptr(tensor->gradient);
+        tensor->gradient_func(tensor->gradient);
         for (auto input : tensor->inputs) {
             input->backprop_dep_count -= 1;
         }
@@ -621,12 +621,12 @@ TensorImpl::TensorImpl(const std::vector<float>& data, const std::vector<int>& s
 TensorImpl::TensorImpl(const TensorImpl& other)
     : storage(std::make_shared<std::vector<float>>(*other.storage)), offset(other.offset), shape(other.shape),
       strides(other.strides), require_grad(other.require_grad), is_leaf(other.is_leaf), gradient(other.gradient),
-      inputs(other.inputs), gradient_func(other.gradient_func), gradient_func_ptr(other.gradient_func_ptr) {}
+      inputs(other.inputs), gradient_func(other.gradient_func) {}
 
 TensorImpl::TensorImpl(TensorImpl&& other)
     : storage(std::move(other.storage)), offset(other.offset), shape(std::move(other.shape)),
       strides(std::move(other.strides)), require_grad(other.require_grad), is_leaf(other.is_leaf),
-      gradient(std::move(other.gradient)), inputs(std::move(other.inputs)), gradient_func(std::move(other.gradient_func)), gradient_func_ptr(std::move(other.gradient_func_ptr)) {}
+      gradient(std::move(other.gradient)), inputs(std::move(other.inputs)), gradient_func(std::move(other.gradient_func)) {}
 
 int TensorImpl::flat_index(const std::vector<int>& idx) const {
     if (idx.size() != shape.size()) {

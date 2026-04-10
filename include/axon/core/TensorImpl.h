@@ -167,7 +167,7 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
     Tensor binary_op(const ConstTensor &rhs, Operation op) const;
 
     /** @brief Elementwise tensor addition */
-    friend Tensor operator+(Tensor lhs_data, Tensor rhs_data);
+    friend Tensor operator+(const Tensor& lhs, const Tensor& rhs);
 
     ///** @brief Elementwise tensor subtraction */
     //TensorImpl operator-(const TensorImpl &rhs) const;
@@ -320,10 +320,9 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
     // ======== Autograd Handling ========
     // ==================================
 
-    using GradientFunc = std::function<void(const TensorImpl &)>;
-    using GradientFuncPtr = std::function<void(std::shared_ptr<TensorImpl>)>;
+    using GradientFunc = std::function<void(const Tensor&)>;
 
-    void set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<TensorImpl>> &inputs);
+    void set_gradient_func(GradientFunc func, const std::vector<Tensor> &inputs);
 
     bool get_is_leaf() const;
 
@@ -342,7 +341,6 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
 
     std::vector<Tensor> inputs;
     GradientFunc gradient_func;
-    GradientFuncPtr gradient_func_ptr;
 
     /** @brief Constructs an empty tensor */
     TensorImpl() = default;
