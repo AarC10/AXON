@@ -222,40 +222,46 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
     // ==================================
 
     /** @brief Elementwise exponential */
-    TensorImpl exp() const;
+    friend Tensor exp(const Tensor& lhs);
 
-    ///** @brief Elementwise natural logarithm */
-    //TensorImpl log() const;
+    /** @brief Elementwise natural logarithm */
+    friend Tensor log(const Tensor& lhs);
 
-    ///** @brief Elementwise square root */
-    //TensorImpl sqrt() const;
+    /** @brief Elementwise square root */
+    friend Tensor sqrt(const Tensor& lhs);
 
     /** @brief Elementwise absolute value */
-    TensorImpl abs() const;
+    friend Tensor abs(const Tensor& lhs);
 
-    ///**
-    // * @brief Raises each element to a scalar exponent
-    // * @param exponent Scalar exponent
-    // * @return Result tensor
-    // */
-    //TensorImpl pow(float exponent) const;
+    /**
+     * @brief Raises each element to a scalar exponent
+     * @param lhs Tensor to raise to a power
+     * @param exponent Scalar exponent
+     * @return Result tensor
+     */
+    friend Tensor pow(const Tensor& lhs, float exponent);
 
-    ///**
-    // * @brief Raises each element to tensor-provided exponents
-    // * @param exp Elementwise exponents
-    // * @return Result tensor
-    // */
-    //TensorImpl pow(const TensorImpl &exp) const;
+    /**
+     * @brief Raises each element to tensor-provided exponents
+     * @param lhs Tensor to raise to a power
+     * @param exp Elementwise exponents
+     * @return Result tensor
+     */
+    friend Tensor pow(const Tensor& lhs, const Tensor& exp);
 
     /**
      * @brief Clamps values to a closed interval
+     * @param lhs Tensor to clamp
      * @param min Lower bound
      * @param max Upper bound
      * @return Clipped tensor
      */
-    TensorImpl clip(float min, float max) const;
+    friend Tensor clip(const Tensor& lhs, float min, float max);
 
-    // ======== Comparison Operations ========
+    // ==================================
+    // ====== Comparison Operations =====
+    // ==================================
+
     /** @brief Elementwise equality comparison */
     friend Tensor operator==(const ConstTensor& lhs, const ConstTensor &rhs);
 
