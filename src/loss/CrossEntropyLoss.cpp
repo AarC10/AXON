@@ -1,3 +1,3 @@
 #include "loss/CrossEntropyLoss.h"
 
-TensorImpl CrossEntropyLoss::forward(const TensorImpl &prediction, const TensorImpl &target) { return {}; }
+Tensor CrossEntropyLoss::forward(const TensorImpl &prediction, const TensorImpl &target) { return {}; }

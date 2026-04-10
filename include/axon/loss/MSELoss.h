@@ -13,7 +13,7 @@ class MSELoss : public Loss {
     MSELoss() = default;
 
     /** @copydoc Loss::forward */
-    TensorImpl forward(const TensorImpl &prediction, const TensorImpl &target) override;
+    Tensor forward(const TensorImpl &prediction, const TensorImpl &target) override;
 };
 
 #endif // AXON_MSELOSS_H

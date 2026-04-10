@@ -8,132 +8,56 @@
 #include <string>
 #include <iostream>
 
-TensorImpl::TensorImpl(const std::vector<int>& shape, bool requires_grad)
-    : offset(0), shape(shape), require_grad(requires_grad), is_leaf(true) {
-    int n = 1;
-    for (int d : shape) {
-        if (d <= 0) {
-            throw std::invalid_argument("Shape dimensions must be positive");
-        }
-
-        n *= d;
-    }
-    storage = std::make_shared<std::vector<float>>(n, 0.0f);
-    compute_strides();
-}
-
-TensorImpl::TensorImpl(const std::vector<float>& data, const std::vector<int>& shape, bool require_grad)
-    : offset(0), shape(shape), require_grad(require_grad), is_leaf(true) {
-    int n = 1;
-    for (const int d : shape) {
-        if (d <= 0) {
-            throw std::invalid_argument("Shape dimensions must be positive");
-        }
-
-        n *= d;
-    }
-
-    if (data.size() != n) {
-        throw std::invalid_argument("Data size (" + std::to_string(data.size()) +
-                                    ") doesn't match tensor shape (expected " + std::to_string(n) + " elements)");
-    }
-
-    storage = std::make_shared<std::vector<float>>(data.begin(), data.end());
-    compute_strides();
-}
-
-TensorImpl::TensorImpl(const TensorImpl& other)
-    : storage(std::make_shared<std::vector<float>>(*other.storage)), offset(other.offset), shape(other.shape),
-      strides(other.strides), require_grad(other.require_grad), is_leaf(other.is_leaf), gradient(other.gradient),
-      inputs(other.inputs), gradient_func(other.gradient_func), gradient_func_ptr(other.gradient_func_ptr) {}
-
-TensorImpl::TensorImpl(TensorImpl&& other)
-    : storage(std::move(other.storage)), offset(other.offset), shape(std::move(other.shape)),
-      strides(std::move(other.strides)), require_grad(other.require_grad), is_leaf(other.is_leaf),
-      gradient(std::move(other.gradient)), inputs(std::move(other.inputs)), gradient_func(std::move(other.gradient_func)), gradient_func_ptr(std::move(other.gradient_func_ptr)) {}
-
-TensorImpl& TensorImpl::operator=(const TensorImpl& other) {
-    if (this == &other) {
-        return *this;
-    }
-    storage = std::make_shared<std::vector<float>>(*other.storage);
-    offset = other.offset;
-    shape = other.shape;
-    strides = other.strides;
-    require_grad = other.require_grad;
-    is_leaf = other.is_leaf;
-    gradient = other.gradient;
-    inputs = other.inputs;
-    gradient_func = other.gradient_func;
-    return *this;
-}
-
-TensorImpl& TensorImpl::operator=(TensorImpl&& other) {
-    if (this == &other) {
-        return *this;
-    }
-    storage = std::move(other.storage);
-    offset = other.offset;
-    shape = std::move(other.shape);
-    strides = std::move(other.strides);
-    require_grad = other.require_grad;
-    is_leaf = other.is_leaf;
-    gradient = std::move(other.gradient);
-    inputs = std::move(other.inputs);
-    gradient_func = std::move(other.gradient_func);
-    return *this;
-}
-
-TensorImpl TensorImpl::zeros(const std::vector<int>& shape, bool require_grad) {
+Tensor TensorImpl::zeros(const std::vector<int>& shape, bool require_grad) {
     // Zero inited in ctor
-    return TensorImpl(shape, require_grad);
+    return Tensor(new TensorImpl(shape, require_grad));
 }
 
-TensorImpl TensorImpl::ones(const std::vector<int>& shape, bool require_grad) {
+Tensor TensorImpl::ones(const std::vector<int>& shape, bool require_grad) {
     return TensorImpl::full(shape, 1.0f, require_grad);
 }
 
-TensorImpl TensorImpl::full(const std::vector<int>& shape, float value, bool requires_grad) {
-    TensorImpl tensor(shape, requires_grad);
-    std::fill(tensor.storage->begin(), tensor.storage->end(), value);
+Tensor TensorImpl::full(const std::vector<int>& shape, float value, bool requires_grad) {
+    Tensor tensor = Tensor(new TensorImpl(shape, requires_grad));
+    std::fill(tensor->storage->begin(), tensor->storage->end(), value);
     return tensor;
 }
 
-TensorImpl TensorImpl::randn(const std::vector<int>& shape, bool require_grad) {
+Tensor TensorImpl::randn(const std::vector<int>& shape, bool require_grad) {
     static std::mt19937 gen(std::random_device{}());
     std::normal_distribution<float> dis(0.0f, 1.0f);
 
-    TensorImpl tensor(shape, require_grad);
+    Tensor tensor = Tensor(new TensorImpl(shape, require_grad));
 
-    for (float& x : *tensor.storage) {
+    for (float& x : *tensor->storage) {
         x = dis(gen);
     }
 
     return tensor;
 }
 
-TensorImpl TensorImpl::rand(const std::vector<int>& shape, bool require_grad) {
+Tensor TensorImpl::rand(const std::vector<int>& shape, bool require_grad) {
     static std::mt19937 gen(std::random_device{}());
     std::uniform_real_distribution<float> dis(0.0f, 1.0f);
 
-    TensorImpl tensor(shape, require_grad);
+    Tensor tensor = Tensor(new TensorImpl(shape, require_grad));
 
-    for (float& x : *tensor.storage) {
+    for (float& x : *tensor->storage) {
         x = dis(gen);
     }
 
     return tensor;
 }
 
-TensorImpl TensorImpl::eye(int n, bool require_grad) {
-    TensorImpl tensor({n, n}, require_grad);
+Tensor TensorImpl::eye(int n, bool require_grad) {
+    Tensor tensor = Tensor(new TensorImpl(std::vector<int>{n, n}, require_grad));
     for (int i = 0; i < n; ++i) {
-        (*tensor.storage)[i * n + i] = 1.0f;
+        (*tensor->storage)[i * n + i] = 1.0f;
     }
     return tensor;
 }
 
-TensorImpl TensorImpl::arange(float start, float stop, float step, bool require_grad) {
+Tensor TensorImpl::arange(float start, float stop, float step, bool require_grad) {
     if (step == 0.0f) {
         throw std::invalid_argument("Step must be non-zero");
     }
@@ -145,12 +69,16 @@ TensorImpl TensorImpl::arange(float start, float stop, float step, bool require_
                                     "), step=" + std::to_string(step));
     }
 
-    TensorImpl tensor({n}, require_grad);
+    Tensor tensor = Tensor(new TensorImpl(std::vector<int>({n}), require_grad));
     for (int i = 0; i < n; ++i) {
-        (*tensor.storage)[i] = start + i * step;
+        (*tensor->storage)[i] = start + i * step;
     }
 
     return tensor;
+}
+
+Tensor TensorImpl::copy(const Tensor &other) {
+    return Tensor(new TensorImpl(*other));
 }
 
 const std::vector<int>& TensorImpl::get_shape() const { return shape; }
@@ -211,19 +139,19 @@ TensorImpl TensorImpl::operator+(const TensorImpl& rhs) const {
     TensorImpl out = binary_op(rhs, [](const float a, const float b) { return a + b; });
 
     if (out.require_grad) {
-        auto lhs_data = std::make_shared<TensorImpl>(*this);
-        auto rhs_data = std::make_shared<TensorImpl>(rhs);
+        auto lhs_data = std::shared_ptr<TensorImpl>(new TensorImpl(*this));
+        auto rhs_data = std::shared_ptr<TensorImpl>(new TensorImpl(rhs));
 
         out.inputs = {lhs_data, rhs_data};
         out.is_leaf = false;
         out.gradient_func = [lhs_data, rhs_data](const TensorImpl& grad) {
             // Adding should pass grad straight through both sides
             if (lhs_data->require_grad) {
-                lhs_data->gradient = std::make_shared<TensorImpl>(lhs_data->gradient ? *lhs_data->gradient + grad : grad);
+                lhs_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(lhs_data->gradient ? *lhs_data->gradient + grad : grad));
             }
 
             if (rhs_data->require_grad) {
-                rhs_data->gradient = std::make_shared<TensorImpl>(rhs_data->gradient ? *rhs_data->gradient + grad : grad);
+                rhs_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(rhs_data->gradient ? *rhs_data->gradient + grad : grad));
             }
         };
     }
@@ -237,52 +165,52 @@ Tensor operator+(Tensor lhs_data, Tensor rhs_data) {
     if (out.require_grad) {
         out.inputs = {lhs_data, rhs_data};
         out.is_leaf = false;
-        out.gradient_func_ptr = [lhs_data, rhs_data](std::shared_ptr<TensorImpl> grad) {
+        out.gradient_func_ptr = [lhs_data, rhs_data](Tensor grad) {
             // Adding should pass grad straight through both sides
             if (lhs_data->require_grad) {
-                lhs_data->gradient = lhs_data->gradient ? lhs_data->gradient + grad : std::make_shared<TensorImpl>(*grad);
+                lhs_data->gradient = lhs_data->gradient ? lhs_data->gradient + grad : grad;
             }
 
             if (rhs_data->require_grad) {
-                rhs_data->gradient = rhs_data->gradient ? rhs_data->gradient + grad : std::make_shared<TensorImpl>(*grad);
+                rhs_data->gradient = rhs_data->gradient ? rhs_data->gradient + grad : grad;
             }
         };
     }
 
-    return std::make_shared<TensorImpl>(out);
+    return Tensor(new TensorImpl(out));
 }
 
-TensorImpl TensorImpl::operator-(const TensorImpl& rhs) const {
-    TensorImpl out = binary_op(rhs, [](const float a, const float b) { return a - b; });
-
-    if (out.require_grad) {
-        auto lhs_data = std::make_shared<TensorImpl>(*this);
-        auto rhs_data = std::make_shared<TensorImpl>(rhs);
-        out.inputs = {lhs_data, rhs_data};
-        out.is_leaf = false;
-        out.gradient_func = [lhs_data, rhs_data](const TensorImpl& grad) {
-            // lhs should get +grad
-            if (lhs_data->require_grad) {
-                lhs_data->gradient = std::make_shared<TensorImpl>(lhs_data->gradient ? *lhs_data->gradient + grad : grad);
-            }
-
-            // rhs gets -grad
-            if (rhs_data->require_grad) {
-                TensorImpl neg_grad = -grad;
-                rhs_data->gradient = std::make_shared<TensorImpl>(rhs_data->gradient ? *rhs_data->gradient + neg_grad : neg_grad);
-            }
-        };
-    }
-
-    return out;
-}
+//TensorImpl TensorImpl::operator-(const TensorImpl& rhs) const {
+//    TensorImpl out = binary_op(rhs, [](const float a, const float b) { return a - b; });
+//
+//    if (out.require_grad) {
+//        auto lhs_data = std::shared_ptr<TensorImpl>(new TensorImpl(*this));
+//        auto rhs_data = std::shared_ptr<TensorImpl>(new TensorImpl(rhs));
+//        out.inputs = {lhs_data, rhs_data};
+//        out.is_leaf = false;
+//        out.gradient_func = [lhs_data, rhs_data](const TensorImpl& grad) {
+//            // lhs should get +grad
+//            if (lhs_data->require_grad) {
+//                lhs_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(lhs_data->gradient ? *lhs_data->gradient + grad : grad));
+//            }
+//
+//            // rhs gets -grad
+//            if (rhs_data->require_grad) {
+//                TensorImpl neg_grad = -grad;
+//                rhs_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(rhs_data->gradient ? *rhs_data->gradient + neg_grad : neg_grad));
+//            }
+//        };
+//    }
+//
+//    return out;
+//}
 
 TensorImpl TensorImpl::operator*(const TensorImpl& rhs) const {
     TensorImpl out = binary_op(rhs, [](const float a, const float b) { return a * b; });
 
     if (out.require_grad) {
-        auto lhs_data = std::make_shared<TensorImpl>(*this);
-        auto rhs_data = std::make_shared<TensorImpl>(rhs);
+        auto lhs_data = std::shared_ptr<TensorImpl>(new TensorImpl(*this));
+        auto rhs_data = std::shared_ptr<TensorImpl>(new TensorImpl(rhs));
 
         out.inputs = {lhs_data, rhs_data};
         out.is_leaf = false;
@@ -291,11 +219,11 @@ TensorImpl TensorImpl::operator*(const TensorImpl& rhs) const {
             // d/db (a*b) = a
             if (lhs_data->require_grad) {
                 TensorImpl lhs_grad = grad * *rhs_data;
-                lhs_data->gradient = std::make_shared<TensorImpl>(lhs_data->gradient ? *lhs_data->gradient + lhs_grad : lhs_grad);
+                lhs_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(lhs_data->gradient ? *lhs_data->gradient + lhs_grad : lhs_grad));
             }
             if (rhs_data->require_grad) {
                 TensorImpl rhs_grad = grad * *lhs_data;
-                rhs_data->gradient = std::make_shared<TensorImpl>(rhs_data->gradient ? *rhs_data->gradient + rhs_grad : rhs_grad);
+                rhs_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(rhs_data->gradient ? *rhs_data->gradient + rhs_grad : rhs_grad));
             }
         };
     }
@@ -303,40 +231,40 @@ TensorImpl TensorImpl::operator*(const TensorImpl& rhs) const {
     return out;
 }
 
-TensorImpl TensorImpl::operator/(const TensorImpl& rhs) const {
-    TensorImpl out = binary_op(rhs, [](const float a, const float b) { return a / b; });
-
-    if (out.require_grad) {
-        auto lhs_data = std::make_shared<TensorImpl>(*this);
-        auto rhs_data = std::make_shared<TensorImpl>(rhs);
-        out.inputs = {lhs_data, rhs_data};
-        out.is_leaf = false;
-        out.gradient_func = [lhs_data, rhs_data](const TensorImpl& grad) {
-            // d/da (a/b) = 1/b
-            // d/db (a/b) = -a/b^2
-            if (lhs_data->require_grad) {
-                TensorImpl lhs_grad = grad / *rhs_data;
-                lhs_data->gradient = std::make_shared<TensorImpl>(lhs_data->gradient ? *lhs_data->gradient + lhs_grad : lhs_grad);
-            }
-            if (rhs_data->require_grad) {
-                TensorImpl rhs_grad = grad * (*lhs_data * -1.0f) / (*rhs_data * *rhs_data);
-                rhs_data->gradient = std::make_shared<TensorImpl>(rhs_data->gradient ? *rhs_data->gradient + rhs_grad : rhs_grad);
-            }
-        };
-    }
-
-    return out;
-}
-
-TensorImpl TensorImpl::operator-() const { return *this * -1.0f; }
-
-TensorImpl TensorImpl::operator+(float scalar) const { return *this + full(shape, scalar); }
-
-TensorImpl TensorImpl::operator-(float scalar) const { return *this - full(shape, scalar); }
-
-TensorImpl TensorImpl::operator*(float scalar) const { return *this * full(shape, scalar); }
-
-TensorImpl TensorImpl::operator/(float scalar) const { return *this / full(shape, scalar); }
+//TensorImpl TensorImpl::operator/(const TensorImpl& rhs) const {
+//    TensorImpl out = binary_op(rhs, [](const float a, const float b) { return a / b; });
+//
+//    if (out.require_grad) {
+//        auto lhs_data = std::shared_ptr<TensorImpl>(new TensorImpl(*this));
+//        auto rhs_data = std::shared_ptr<TensorImpl>(new TensorImpl(rhs));
+//        out.inputs = {lhs_data, rhs_data};
+//        out.is_leaf = false;
+//        out.gradient_func = [lhs_data, rhs_data](const TensorImpl& grad) {
+//            // d/da (a/b) = 1/b
+//            // d/db (a/b) = -a/b^2
+//            if (lhs_data->require_grad) {
+//                TensorImpl lhs_grad = grad / *rhs_data;
+//                lhs_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(lhs_data->gradient ? *lhs_data->gradient + lhs_grad : lhs_grad));
+//            }
+//            if (rhs_data->require_grad) {
+//                TensorImpl rhs_grad = grad * (*lhs_data * -1.0f) / (*rhs_data * *rhs_data);
+//                rhs_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(rhs_data->gradient ? *rhs_data->gradient + rhs_grad : rhs_grad));
+//            }
+//        };
+//    }
+//
+//    return out;
+//}
+//
+//TensorImpl TensorImpl::operator-() const { return *this * -1.0f; }
+//
+//TensorImpl TensorImpl::operator+(float scalar) const { return *this + full(shape, scalar); }
+//
+//TensorImpl TensorImpl::operator-(float scalar) const { return *this - full(shape, scalar); }
+//
+//TensorImpl TensorImpl::operator*(float scalar) const { return *this * full(shape, scalar); }
+//
+//TensorImpl TensorImpl::operator/(float scalar) const { return *this / full(shape, scalar); }
 
 TensorImpl& TensorImpl::operator+=(const TensorImpl& rhs) {
     if (require_grad && !is_leaf) {
@@ -402,13 +330,13 @@ TensorImpl& TensorImpl::operator/=(const TensorImpl& rhs) {
     return *this;
 }
 
-TensorImpl operator+(float scalar, const TensorImpl& tensor) { return tensor + scalar; }
-
-TensorImpl operator-(float scalar, const TensorImpl& tensor) { return TensorImpl::full(tensor.shape, scalar) - tensor; }
-
-TensorImpl operator*(float scalar, const TensorImpl& tensor) { return tensor * scalar; }
-
-TensorImpl operator/(float scalar, const TensorImpl& tensor) { return TensorImpl::full(tensor.shape, scalar) / tensor; }
+//TensorImpl operator+(float scalar, const TensorImpl& tensor) { return tensor + scalar; }
+//
+//TensorImpl operator-(float scalar, const TensorImpl& tensor) { return TensorImpl::full(tensor.shape, scalar) - tensor; }
+//
+//TensorImpl operator*(float scalar, const TensorImpl& tensor) { return tensor * scalar; }
+//
+//TensorImpl operator/(float scalar, const TensorImpl& tensor) { return TensorImpl::full(tensor.shape, scalar) / tensor; }
 
 TensorImpl TensorImpl::exp() const {
     TensorImpl out(shape, require_grad);
@@ -418,62 +346,62 @@ TensorImpl TensorImpl::exp() const {
     }
 
     if (require_grad) {
-        auto self_data = std::make_shared<TensorImpl>(*this);
-        auto out_ptr = std::make_shared<TensorImpl>(out);
+        auto self_data = std::shared_ptr<TensorImpl>(new TensorImpl(*this));
+        auto out_ptr = std::shared_ptr<TensorImpl>(new TensorImpl(out));
 
         out.inputs = {self_data};
         out.is_leaf = false;
         out.gradient_func = [self_data](const TensorImpl& grad) {
             // d/dx exp(x) = exp(x)
             TensorImpl lhs_grad = grad * self_data->exp();
-            self_data->gradient = std::make_shared<TensorImpl>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
+            self_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad));
         };
     }
 
     return out;
 }
 
-TensorImpl TensorImpl::log() const {
-    TensorImpl out(shape, require_grad);
-
-    for (int i = 0; i < nelem(); ++i) {
-        (*out.storage)[i] = std::log((*storage)[offset + i]);
-    }
-
-    if (require_grad) {
-        auto self_data = std::make_shared<TensorImpl>(*this);
-        out.inputs = {self_data};
-        out.is_leaf = false;
-        out.gradient_func = [self_data](const TensorImpl& grad) {
-            // d/dx log(x) = 1/x
-            TensorImpl lhs_grad = grad / *self_data;
-            self_data->gradient = std::make_shared<TensorImpl>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
-        };
-    }
-
-    return out;
-}
-TensorImpl TensorImpl::sqrt() const {
-    TensorImpl out(shape, require_grad);
-    for (int i = 0; i < nelem(); ++i) {
-        (*out.storage)[i] = std::sqrt((*storage)[offset + i]);
-    }
-
-    if (require_grad) {
-        auto self_data = std::make_shared<TensorImpl>(*this);
-        auto out_ptr = std::make_shared<TensorImpl>(out);
-
-        out.inputs = {self_data};
-        out.is_leaf = false;
-        out.gradient_func = [self_data, out_ptr](const TensorImpl& grad) {
-            // d/dx sqrt(x) = 1 / (2 * sqrt(x))
-            TensorImpl lhs_grad = grad / (*out_ptr * 2.0f);
-            self_data->gradient = std::make_shared<TensorImpl>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
-        };
-    }
-
-    return out;
-}
+//TensorImpl TensorImpl::log() const {
+//    TensorImpl out(shape, require_grad);
+//
+//    for (int i = 0; i < nelem(); ++i) {
+//        (*out.storage)[i] = std::log((*storage)[offset + i]);
+//    }
+//
+//    if (require_grad) {
+//        auto self_data = std::shared_ptr<TensorImpl>(new TensorImpl(*this));
+//        out.inputs = {self_data};
+//        out.is_leaf = false;
+//        out.gradient_func = [self_data](const TensorImpl& grad) {
+//            // d/dx log(x) = 1/x
+//            TensorImpl lhs_grad = grad / *self_data;
+//            self_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad));
+//        };
+//    }
+//
+//    return out;
+//}
+//TensorImpl TensorImpl::sqrt() const {
+//    TensorImpl out(shape, require_grad);
+//    for (int i = 0; i < nelem(); ++i) {
+//        (*out.storage)[i] = std::sqrt((*storage)[offset + i]);
+//    }
+//
+//    if (require_grad) {
+//        auto self_data = std::shared_ptr<TensorImpl>(new TensorImpl(*this));
+//        auto out_ptr = std::shared_ptr<TensorImpl>(new TensorImpl(out));
+//
+//        out.inputs = {self_data};
+//        out.is_leaf = false;
+//        out.gradient_func = [self_data, out_ptr](const TensorImpl& grad) {
+//            // d/dx sqrt(x) = 1 / (2 * sqrt(x))
+//            TensorImpl lhs_grad = grad / (*out_ptr * 2.0f);
+//            self_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad));
+//        };
+//    }
+//
+//    return out;
+//}
 TensorImpl TensorImpl::abs() const {
     TensorImpl out(shape, require_grad);
     for (int i = 0; i < nelem(); i++) {
@@ -481,7 +409,7 @@ TensorImpl TensorImpl::abs() const {
     }
 
     if (require_grad) {
-        auto self_data = std::make_shared<TensorImpl>(*this);
+        auto self_data = std::shared_ptr<TensorImpl>(new TensorImpl(*this));
         out.inputs = {self_data};
         out.is_leaf = false;
         out.gradient_func = [self_data](const TensorImpl& grad) {
@@ -492,58 +420,58 @@ TensorImpl TensorImpl::abs() const {
                 (*sign.storage)[i] = val > 0.0f ? 1.0f : (val < 0.0f ? -1.0f : 0.0f);
             }
             TensorImpl lhs_grad = grad * sign;
-            self_data->gradient = std::make_shared<TensorImpl>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
+            self_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad));
         };
     }
 
     return out;
 }
 
-TensorImpl TensorImpl::pow(float exponent) const {
-    TensorImpl out(shape, require_grad);
-    for (int i = 0; i < nelem(); i++) {
-        (*out.storage)[i] = std::pow((*storage)[offset + i], exponent);
-    }
-
-    if (require_grad) {
-        auto self_data = std::make_shared<TensorImpl>(*this);
-
-        out.inputs = {self_data};
-        out.is_leaf = false;
-        out.gradient_func = [self_data, exponent](const TensorImpl& grad) {
-            // d/dx x^n = n * x^(n-1)
-            TensorImpl lhs_grad = grad * self_data->pow(exponent - 1.0f) * exponent;
-            self_data->gradient = std::make_shared<TensorImpl>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
-        };
-    }
-
-    return out;
-}
-
-TensorImpl TensorImpl::pow(const TensorImpl& exp) const {
-    TensorImpl out = binary_op(exp, [](const float a, const float b) { return std::pow(a, b); });
-
-    if (out.require_grad) {
-        auto self_data = std::make_shared<TensorImpl>(*this);
-        auto exp_data = std::make_shared<TensorImpl>(exp);
-        out.inputs = {self_data, exp_data};
-        out.is_leaf = false;
-        out.gradient_func = [self_data, exp_data](const TensorImpl& grad) {
-            // d/da a^b = b * a^(b-1)
-            if (self_data->require_grad) {
-                TensorImpl lhs_grad = grad * *exp_data * self_data->pow(*exp_data - 1.0f);
-                self_data->gradient = std::make_shared<TensorImpl>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
-            }
-            // d/db a^b = a^b * log(a)
-            if (exp_data->require_grad) {
-                TensorImpl rhs_grad = grad * self_data->pow(*exp_data) * self_data->log();
-                exp_data->gradient = std::make_shared<TensorImpl>(exp_data->gradient ? *exp_data->gradient + rhs_grad : rhs_grad);
-            }
-        };
-    }
-
-    return out;
-}
+//TensorImpl TensorImpl::pow(float exponent) const {
+//    TensorImpl out(shape, require_grad);
+//    for (int i = 0; i < nelem(); i++) {
+//        (*out.storage)[i] = std::pow((*storage)[offset + i], exponent);
+//    }
+//
+//    if (require_grad) {
+//        auto self_data = std::shared_ptr<TensorImpl>(new TensorImpl(*this));
+//
+//        out.inputs = {self_data};
+//        out.is_leaf = false;
+//        out.gradient_func = [self_data, exponent](const TensorImpl& grad) {
+//            // d/dx x^n = n * x^(n-1)
+//            TensorImpl lhs_grad = grad * self_data->pow(exponent - 1.0f) * exponent;
+//            self_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad));
+//        };
+//    }
+//
+//    return out;
+//}
+//
+//TensorImpl TensorImpl::pow(const TensorImpl& exp) const {
+//    TensorImpl out = binary_op(exp, [](const float a, const float b) { return std::pow(a, b); });
+//
+//    if (out.require_grad) {
+//        auto self_data = std::shared_ptr<TensorImpl>(new TensorImpl(*this));
+//        auto exp_data = std::shared_ptr<TensorImpl>(new TensorImpl(exp));
+//        out.inputs = {self_data, exp_data};
+//        out.is_leaf = false;
+//        out.gradient_func = [self_data, exp_data](const TensorImpl& grad) {
+//            // d/da a^b = b * a^(b-1)
+//            if (self_data->require_grad) {
+//                TensorImpl lhs_grad = grad * *exp_data * self_data->pow(*exp_data - 1.0f);
+//                self_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad));
+//            }
+//            // d/db a^b = a^b * log(a)
+//            if (exp_data->require_grad) {
+//                TensorImpl rhs_grad = grad * self_data->pow(*exp_data) * self_data->log();
+//                exp_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(exp_data->gradient ? *exp_data->gradient + rhs_grad : rhs_grad));
+//            }
+//        };
+//    }
+//
+//    return out;
+//}
 
 TensorImpl TensorImpl::clip(float min, float max) const {
     TensorImpl out(shape, require_grad);
@@ -552,7 +480,7 @@ TensorImpl TensorImpl::clip(float min, float max) const {
     }
 
     if (require_grad) {
-        auto self_data = std::make_shared<TensorImpl>(*this);
+        auto self_data = std::shared_ptr<TensorImpl>(new TensorImpl(*this));
         out.inputs = {self_data};
         out.is_leaf = false;
         out.gradient_func = [self_data, min, max](const TensorImpl& grad) {
@@ -563,7 +491,7 @@ TensorImpl TensorImpl::clip(float min, float max) const {
                 (*mask.storage)[i] = (val >= min && val <= max) ? 1.0f : 0.0f;
             }
             TensorImpl lhs_grad = grad * mask;
-            self_data->gradient = std::make_shared<TensorImpl>(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad);
+            self_data->gradient = std::shared_ptr<TensorImpl>(new TensorImpl(self_data->gradient ? *self_data->gradient + lhs_grad : lhs_grad));
         };
     }
 
@@ -626,7 +554,7 @@ void TensorImpl::zero_grad() {
 
 void TensorImpl::backward() {
     if (require_grad) {
-        gradient = std::make_shared<TensorImpl>(TensorImpl::ones(shape));
+        gradient = TensorImpl::ones(shape);
     } else {
         return;
     }
@@ -637,7 +565,7 @@ void TensorImpl::backward() {
     }
 
     // Build dependency count
-    std::vector<std::shared_ptr<TensorImpl>> computation_tensors = inputs;
+    std::vector<Tensor> computation_tensors = inputs;
 
     for (int i = 0; i < computation_tensors.size(); ++i) {
         TensorImpl& tensor = *computation_tensors[i];
@@ -677,12 +605,56 @@ void TensorImpl::backward() {
     }
 }
 
-void TensorImpl::set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<TensorImpl>>& inputs) {
+void TensorImpl::set_gradient_func(GradientFunc func, const std::vector<Tensor>& inputs) {
     this->gradient_func = func;
     this->inputs = inputs;
 }
 
 bool TensorImpl::get_is_leaf() const { return is_leaf; }
+
+TensorImpl::TensorImpl(const std::vector<int>& shape, bool requires_grad)
+    : offset(0), shape(shape), require_grad(requires_grad), is_leaf(true) {
+    int n = 1;
+    for (int d : shape) {
+        if (d <= 0) {
+            throw std::invalid_argument("Shape dimensions must be positive");
+        }
+
+        n *= d;
+    }
+    storage = std::make_shared<std::vector<float>>(n, 0.0f);
+    compute_strides();
+}
+
+TensorImpl::TensorImpl(const std::vector<float>& data, const std::vector<int>& shape, bool require_grad)
+    : offset(0), shape(shape), require_grad(require_grad), is_leaf(true) {
+    int n = 1;
+    for (const int d : shape) {
+        if (d <= 0) {
+            throw std::invalid_argument("Shape dimensions must be positive");
+        }
+
+        n *= d;
+    }
+
+    if (data.size() != n) {
+        throw std::invalid_argument("Data size (" + std::to_string(data.size()) +
+                                    ") doesn't match tensor shape (expected " + std::to_string(n) + " elements)");
+    }
+
+    storage = std::make_shared<std::vector<float>>(data.begin(), data.end());
+    compute_strides();
+}
+
+TensorImpl::TensorImpl(const TensorImpl& other)
+    : storage(std::make_shared<std::vector<float>>(*other.storage)), offset(other.offset), shape(other.shape),
+      strides(other.strides), require_grad(other.require_grad), is_leaf(other.is_leaf), gradient(other.gradient),
+      inputs(other.inputs), gradient_func(other.gradient_func), gradient_func_ptr(other.gradient_func_ptr) {}
+
+TensorImpl::TensorImpl(TensorImpl&& other)
+    : storage(std::move(other.storage)), offset(other.offset), shape(std::move(other.shape)),
+      strides(std::move(other.strides)), require_grad(other.require_grad), is_leaf(other.is_leaf),
+      gradient(std::move(other.gradient)), inputs(std::move(other.inputs)), gradient_func(std::move(other.gradient_func)), gradient_func_ptr(std::move(other.gradient_func_ptr)) {}
 
 int TensorImpl::flat_index(const std::vector<int>& idx) const {
     if (idx.size() != shape.size()) {
