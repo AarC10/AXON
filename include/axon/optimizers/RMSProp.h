@@ -12,7 +12,7 @@ class RMSProp : public Optimizer {
      * @param decay_rate Running average decay factor for squared gradients
      * @param epsilon Stability constant for denominator updates
      */
-    RMSProp(std::vector<std::shared_ptr<Tensor>> parameters, float learning_rate = 1e-3f, float decay_rate = 0.9f,
+    RMSProp(std::vector<Tensor> parameters, float learning_rate = 1e-3f, float decay_rate = 0.9f,
             float epsilon = 1e-8f);
 
     /** @brief Performs one optimization step */
