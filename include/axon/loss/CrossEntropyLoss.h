@@ -13,7 +13,7 @@ class CrossEntropyLoss : public Loss {
     CrossEntropyLoss() = default;
 
     /** @copydoc Loss::forward */
-    Tensor forward(const TensorImpl &prediction, const TensorImpl &target) override;
+    Tensor forward(const Tensor &prediction, const Tensor &target) override;
 };
 
 #endif // AXON_CROSSENTROPYLOSS_H

@@ -8,6 +8,10 @@
 #include <string>
 #include <iostream>
 
+Tensor TensorImpl::from_data(const std::vector<float> &data, const std::vector<int> &shape, bool require_grad) {
+    return Tensor(new TensorImpl(data, shape, require_grad));
+}
+
 Tensor TensorImpl::zeros(const std::vector<int>& shape, bool require_grad) {
     // Zero inited in ctor
     return Tensor(new TensorImpl(shape, require_grad));

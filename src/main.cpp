@@ -1,14 +1,72 @@
 // NOTE THIS IS A TEMPORARY TEST FILE TO EXERCISE TENSORS AND SHOULD BE DELETED LATER
 // Maybe one day we will have a G test
 #include "core/TensorImpl.h"
+#include "data/CSVLoader.h"
+#include "loss/CrossEntropyLoss.h"
+#include "loss/MSELoss.h"
 
 #include <cassert>
+#include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
+#include <string>
 #include <utility>
 namespace {
 
-bool approx_equal(float a, float b, float eps = 1e-5f) { return std::fabs(a - b) <= eps; }
+bool approx_equal(float a, float b, float eps = 1e-5f) {
+    return std::fabs(a - b) <= eps;
+}
+
+void print_tensor(const Tensor &tensor, const std::string &name) {
+    std::cout << name << " shape: {";
+
+    const std::vector<int> &shape = tensor->get_shape();
+
+    for (std::size_t i = 0; i < shape.size(); ++i) {
+        std::cout << shape[i];
+
+        if (i + 1 < shape.size()) {
+            std::cout << ", ";
+        }
+    }
+
+    std::cout << "}\n";
+
+    if (shape.size() != 2) {
+        for (int i = 0; i < tensor->nelem(); ++i) {
+            std::cout << tensor->at(i) << "\n";
+        }
+
+        return;
+    }
+
+    int rows = shape[0];
+    int cols = shape[1];
+
+    for (int row = 0; row < rows; ++row) {
+        for (int col = 0; col < cols; ++col) {
+            int index = row * cols + col;
+            std::cout << tensor->at(index);
+
+            if (col + 1 < cols) {
+                std::cout << ", ";
+            }
+        }
+
+        std::cout << "\n";
+    }
+}
+
+double run_benchmark(std::string_view name, const std::function<void()>& test) {
+    const auto start = Clock::now();
+    test();
+    const auto end = Clock::now();
+
+    const auto elapsed = std::chrono::duration<double, std::micro>(end - start).count();
+    std::cout << std::left << std::setw(32) << name << " " << std::fixed << std::setprecision(2) << elapsed << " us\n";
+    return elapsed;
+}
 
 void test_shape_and_fill() {
     Tensor zero_matrix = TensorImpl::zeros({2, 3});
@@ -117,7 +175,7 @@ void test_backprop_arithmetic() {
         assert(approx_equal(a->grad()->at(0), 3.0f));
         assert(approx_equal(b->grad()->at(0), 4.0f));
     }
-    
+
     // Division
     {
         auto a = TensorImpl::full({1}, 10.0f, true);
@@ -187,15 +245,15 @@ void test_backprop_complex() {
     //       = 1 * exp(6) * b + 1 = 3 * exp(6) + 1
     // dz/db = dz/dy * dy/dx * dx/db
     //       = 1 * exp(6) * a = 2 * exp(6)
-    
+
     auto a = TensorImpl::full({1}, 2.0f, true);
     auto b = TensorImpl::full({1}, 3.0f, true);
     auto x = a * b;
     auto y = exp(x);
     auto z = y + a;
-    
+
     z->backward();
-    
+
     assert(approx_equal(a->grad()->at(0), 3.0f * std::exp(6.0f) + 1.0f));
     assert(approx_equal(b->grad()->at(0), 2.0f * std::exp(6.0f)));
 }
@@ -232,20 +290,71 @@ void test_backprop_clip_abs() {
     }
 }
 
+void test_mse_loss() {
+    // Mean of squared differences: ((1-0)^2 + (2-0)^2 + (3-0)^2 + (4-0)^2) / 4 = 30 / 4 = 7.5
+    Tensor prediction = TensorImpl::from_data({1.0f, 2.0f, 3.0f, 4.0f}, {2, 2});
+    Tensor target = TensorImpl::zeros({2, 2});
+    MSELoss criterion;
+    Tensor loss = criterion.forward(prediction, target);
+    assert(loss->nelem() == 1);
+    assert(approx_equal(loss->at(0), 7.5f));
+
+    // Identical tensors should produce a zero loss
+    Tensor identicalLoss = criterion.forward(prediction, prediction);
+    assert(approx_equal(identicalLoss->at(0), 0.0f));
+}
+
+void test_cross_entropy_loss() {
+    // Two samples with three classes, correct class gets a much larger logit
+    Tensor logits = TensorImpl::from_data({2.0f, 1.0f, 0.1f, 0.1f, 1.0f, 2.0f}, {2, 3});
+    Tensor targets = TensorImpl::from_data(std::vector<float>{0.0f, 2.0f}, std::vector<int>{2});
+    CrossEntropyLoss criterion;
+    Tensor loss = criterion.forward(logits, targets);
+    assert(loss->nelem() == 1);
+
+    // Hand-computed reference using log-sum-exp on each row
+    const float row0LogSumExp = std::log(std::exp(2.0f) + std::exp(1.0f) + std::exp(0.1f));
+    const float row1LogSumExp = std::log(std::exp(0.1f) + std::exp(1.0f) + std::exp(2.0f));
+    const float expectedLoss = ((row0LogSumExp - 2.0f) + (row1LogSumExp - 2.0f)) / 2.0f;
+    assert(approx_equal(loss->at(0), expectedLoss, 1e-4f));
+
+    // Confidently correct predictions should give a near-zero loss
+    Tensor confidentLogits = TensorImpl::from_data({10.0f, -10.0f, -10.0f, -10.0f, 10.0f, -10.0f}, {2, 3});
+    Tensor confidentTargets = TensorImpl::from_data(std::vector<float>{0.0f, 1.0f}, std::vector<int>{2});
+    Tensor confidentLoss = criterion.forward(confidentLogits, confidentTargets);
+    assert(confidentLoss->at(0) < 1e-3f);
+}
+
 } // namespace
 
 int main() {
-    test_shape_and_fill();
-    test_requires_grad_flag();
-    test_inplace_arithmetic();
-    test_copy_and_move_semantics();
-    test_backprop_basic();
-    test_backprop_arithmetic();
-    test_backprop_math();
-    test_backprop_complex();
-    test_backprop_clip_abs();
+    double total_us = 0.0;
 
+    std::cout << "Benchmark results:\n";
+    total_us += run_benchmark("test_shape_and_fill", test_shape_and_fill);
+    total_us += run_benchmark("test_requires_grad_flag", test_requires_grad_flag);
+    total_us += run_benchmark("test_inplace_arithmetic", test_inplace_arithmetic);
+    total_us += run_benchmark("test_copy_and_move_semantics", test_copy_and_move_semantics);
+    total_us += run_benchmark("test_backprop_basic", test_backprop_basic);
+    total_us += run_benchmark("test_backprop_arithmetic", test_backprop_arithmetic);
+    total_us += run_benchmark("test_backprop_math", test_backprop_math);
+    total_us += run_benchmark("test_backprop_complex", test_backprop_complex);
+    total_us += run_benchmark("test_backprop_clip_abs", test_backprop_clip_abs);
+    total_us += run_benchmark("test_mse_loss", test_mse_loss);
+    total_us += run_benchmark("test_cross_entropy_loss", test_cross_entropy_loss);
+
+    std::cout << std::left << std::setw(32) << "total" << " " << std::fixed << std::setprecision(2) << total_us
+              << " us\n";
     std::cout << "Pass!\n";
+
+    if (argc >= 3) {
+        std::string path = argv[1];
+        int label_col = std::stoi(argv[2]);
+        std::pair<Tensor, Tensor> loaded = axon::data::load_csv(path, label_col);
+
+        print_tensor(loaded.first, "X");
+        print_tensor(loaded.second, "y");
+    }
 
     return 0;
 }

@@ -14,7 +14,7 @@ class Loss {
      * @param target Ground-truth tensor
      * @return Scalar loss tensor
      */
-    virtual Tensor forward(const TensorImpl &prediction, const TensorImpl &target) = 0;
+    virtual Tensor forward(const Tensor &prediction, const Tensor &target) = 0;
 };
 
 #endif // AXON_LOSS_H

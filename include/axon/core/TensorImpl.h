@@ -18,6 +18,14 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
     // ==================================
 
     /**
+     * @brief Constructs a tensor from existing data and shape
+     * @param data Flat data buffer
+     * @param shape Dimensions of the tensor
+     * @param require_grad Whether gradients should be tracked
+     */
+    static Tensor from_data(const std::vector<float> &data, const std::vector<int> &shape, bool require_grad = false);
+
+    /**
      * @brief Creates a tensor filled with zeros
      * @param shape Dimensions of the tensor
      * @param require_grad Whether to track gradients for this tensor
