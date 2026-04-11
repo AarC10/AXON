@@ -85,7 +85,7 @@ void test_copy_and_move_semantics() {
     assert(approx_equal(moved->at(1), 9.0f));
 }
 
-void test_backprop() {
+void test_backprop_basic() {
     auto a = TensorImpl::full({1}, 100.0f, true);
     auto b = TensorImpl::full({1},  10.0f, true);
     auto c = TensorImpl::full({1},   1.0f, true);
@@ -105,14 +105,145 @@ void test_backprop() {
     assert(approx_equal(g->grad()->at(0), 1.0f));
 }
 
+void test_backprop_arithmetic() {
+    // Addition & Subtraction & Multiplication
+    {
+        auto a = TensorImpl::full({1}, 5.0f, true);
+        auto b = TensorImpl::full({1}, 2.0f, true);
+        auto c = (a * b) + (a - b); // 5*2 + (5-2) = 10 + 3 = 13
+        // dc/da = b + 1 = 3
+        // dc/db = a - 1 = 4
+        c->backward();
+        assert(approx_equal(a->grad()->at(0), 3.0f));
+        assert(approx_equal(b->grad()->at(0), 4.0f));
+    }
+    
+    // Division
+    {
+        auto a = TensorImpl::full({1}, 10.0f, true);
+        auto b = TensorImpl::full({1}, 2.0f, true);
+        auto c = a / b; // 5
+        // dc/da = 1/b = 0.5
+        // dc/db = -a/b^2 = -10/4 = -2.5
+        c->backward();
+        assert(approx_equal(a->grad()->at(0), 0.5f));
+        assert(approx_equal(b->grad()->at(0), -2.5f));
+    }
+}
+
+void test_backprop_math() {
+    // Power (scalar)
+    {
+        auto a = TensorImpl::full({1}, 3.0f, true);
+        auto b = pow(a, 2.0f); // 9
+        // db/da = 2*a = 6
+        b->backward();
+        assert(approx_equal(a->grad()->at(0), 6.0f));
+    }
+
+    // Power (tensor)
+    {
+        auto a = TensorImpl::full({1}, 2.0f, true);
+        auto b = TensorImpl::full({1}, 3.0f, true);
+        auto c = pow(a, b); // 8
+        // dc/da = b * a^(b-1) = 3 * 2^2 = 12
+        // dc/db = a^b * log(a) = 2^3 * log(2) = 8 * log(2)
+        c->backward();
+        assert(approx_equal(a->grad()->at(0), 12.0f));
+        assert(approx_equal(b->grad()->at(0), 8.0f * std::log(2.0f)));
+    }
+
+    // Exp & Log
+    {
+        auto a = TensorImpl::full({1}, 2.0f, true);
+        auto b = exp(a); // e^2
+        // db/da = e^2
+        b->backward();
+        assert(approx_equal(a->grad()->at(0), std::exp(2.0f)));
+
+        auto x = TensorImpl::full({1}, 2.0f, true);
+        auto y = log(x); // log(2)
+        // dy/dx = 1/x = 0.5
+        y->backward();
+        assert(approx_equal(x->grad()->at(0), 0.5f));
+    }
+
+    // Sqrt
+    {
+        auto a = TensorImpl::full({1}, 4.0f, true);
+        auto b = sqrt(a); // 2
+        // db/da = 1 / (2 * sqrt(a)) = 1 / (2 * 2) = 0.25
+        b->backward();
+        assert(approx_equal(a->grad()->at(0), 0.25f));
+    }
+}
+
+void test_backprop_complex() {
+    // a = 2, b = 3
+    // x = a * b = 6
+    // y = exp(x) = exp(6)
+    // z = y + a = exp(6) + 2
+    // dz/da = dz/dy * dy/dx * dx/da + dz/da_direct
+    //       = 1 * exp(6) * b + 1 = 3 * exp(6) + 1
+    // dz/db = dz/dy * dy/dx * dx/db
+    //       = 1 * exp(6) * a = 2 * exp(6)
+    
+    auto a = TensorImpl::full({1}, 2.0f, true);
+    auto b = TensorImpl::full({1}, 3.0f, true);
+    auto x = a * b;
+    auto y = exp(x);
+    auto z = y + a;
+    
+    z->backward();
+    
+    assert(approx_equal(a->grad()->at(0), 3.0f * std::exp(6.0f) + 1.0f));
+    assert(approx_equal(b->grad()->at(0), 2.0f * std::exp(6.0f)));
+}
+
+void test_backprop_clip_abs() {
+    // Abs
+    {
+        auto a = TensorImpl::full({1}, -5.0f, true);
+        auto b = abs(a); // 5
+        // db/da = -1
+        b->backward();
+        assert(approx_equal(a->grad()->at(0), -1.0f));
+
+        auto c = TensorImpl::full({1}, 5.0f, true);
+        auto d = abs(c); // 5
+        // dd/dc = 1
+        d->backward();
+        assert(approx_equal(c->grad()->at(0), 1.0f));
+    }
+
+    // Clip
+    {
+        auto a = TensorImpl::full({1}, 10.0f, true);
+        auto b = clip(a, 0.0f, 5.0f); // 5
+        // db/da = 0 (since it's clipped)
+        b->backward();
+        assert(approx_equal(a->grad()->at(0), 0.0f));
+
+        auto c = TensorImpl::full({1}, 3.0f, true);
+        auto d = clip(c, 0.0f, 5.0f); // 3
+        // dd/dc = 1 (since it's not clipped)
+        d->backward();
+        assert(approx_equal(c->grad()->at(0), 1.0f));
+    }
+}
+
 } // namespace
 
 int main() {
-    //test_shape_and_fill();
-    //test_requires_grad_flag();
-    //test_inplace_arithmetic();
+    test_shape_and_fill();
+    test_requires_grad_flag();
+    test_inplace_arithmetic();
     test_copy_and_move_semantics();
-    test_backprop();
+    test_backprop_basic();
+    test_backprop_arithmetic();
+    test_backprop_math();
+    test_backprop_complex();
+    test_backprop_clip_abs();
 
     std::cout << "Pass!\n";
 
