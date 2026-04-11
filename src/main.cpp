@@ -1,22 +1,62 @@
 // NOTE THIS IS A TEMPORARY TEST FILE TO EXERCISE TENSORS AND SHOULD BE DELETED LATER
 // Maybe one day we will have a G test
 #include "core/Tensor.h"
+#include "data/CSVLoader.h"
 #include "loss/CrossEntropyLoss.h"
 #include "loss/MSELoss.h"
 
 #include <cassert>
 #include <chrono>
 #include <cmath>
-#include <functional>
-#include <iomanip>
+#include <cstdlib>
 #include <iostream>
-#include <string_view>
+#include <string>
 #include <utility>
 namespace {
 
-using Clock = std::chrono::steady_clock;
+bool approx_equal(float a, float b, float eps = 1e-5f) {
+    return std::fabs(a - b) <= eps;
+}
 
-bool approx_equal(float a, float b, float eps = 1e-5f) { return std::fabs(a - b) <= eps; }
+void print_tensor(const Tensor &tensor, const std::string &name) {
+    std::cout << name << " shape: {";
+
+    const std::vector<int> &shape = tensor.get_shape();
+
+    for (std::size_t i = 0; i < shape.size(); ++i) {
+        std::cout << shape[i];
+
+        if (i + 1 < shape.size()) {
+            std::cout << ", ";
+        }
+    }
+
+    std::cout << "}\n";
+
+    if (shape.size() != 2) {
+        for (int i = 0; i < tensor.nelem(); ++i) {
+            std::cout << tensor[i] << "\n";
+        }
+
+        return;
+    }
+
+    int rows = shape[0];
+    int cols = shape[1];
+
+    for (int row = 0; row < rows; ++row) {
+        for (int col = 0; col < cols; ++col) {
+            int index = row * cols + col;
+            std::cout << tensor[index];
+
+            if (col + 1 < cols) {
+                std::cout << ", ";
+            }
+        }
+
+        std::cout << "\n";
+    }
+}
 
 double run_benchmark(std::string_view name, const std::function<void()>& test) {
     const auto start = Clock::now();
@@ -154,6 +194,15 @@ int main() {
     std::cout << std::left << std::setw(32) << "total" << " " << std::fixed << std::setprecision(2) << total_us
               << " us\n";
     std::cout << "Pass!\n";
+
+    if (argc >= 3) {
+        std::string path = argv[1];
+        int label_col = std::stoi(argv[2]);
+        std::pair<Tensor, Tensor> loaded = axon::data::load_csv(path, label_col);
+
+        print_tensor(loaded.first, "X");
+        print_tensor(loaded.second, "y");
+    }
 
     return 0;
 }
