@@ -2,8 +2,11 @@
 // Maybe one day we will have a G test
 #include "core/Tensor.h"
 #include "data/CSVLoader.h"
+#include "loss/CrossEntropyLoss.h"
+#include "loss/MSELoss.h"
 
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -53,6 +56,16 @@ void print_tensor(const Tensor &tensor, const std::string &name) {
 
         std::cout << "\n";
     }
+}
+
+double run_benchmark(std::string_view name, const std::function<void()>& test) {
+    const auto start = Clock::now();
+    test();
+    const auto end = Clock::now();
+
+    const auto elapsed = std::chrono::duration<double, std::micro>(end - start).count();
+    std::cout << std::left << std::setw(32) << name << " " << std::fixed << std::setprecision(2) << elapsed << " us\n";
+    return elapsed;
 }
 
 void test_shape_and_fill() {
@@ -130,14 +143,56 @@ void test_copy_and_move_semantics() {
     assert(approx_equal(moved[1], 9.0f));
 }
 
+void test_mse_loss() {
+    // Mean of squared differences: ((1-0)^2 + (2-0)^2 + (3-0)^2 + (4-0)^2) / 4 = 30 / 4 = 7.5
+    Tensor prediction({1.0f, 2.0f, 3.0f, 4.0f}, {2, 2});
+    Tensor target = Tensor::zeros({2, 2});
+    MSELoss criterion;
+    Tensor loss = criterion.forward(prediction, target);
+    assert(loss.nelem() == 1);
+    assert(approx_equal(loss[0], 7.5f));
+
+    // Identical tensors should produce a zero loss
+    Tensor identicalLoss = criterion.forward(prediction, prediction);
+    assert(approx_equal(identicalLoss[0], 0.0f));
+}
+
+void test_cross_entropy_loss() {
+    // Two samples with three classes, correct class gets a much larger logit
+    Tensor logits({2.0f, 1.0f, 0.1f, 0.1f, 1.0f, 2.0f}, {2, 3});
+    Tensor targets(std::vector<float>{0.0f, 2.0f}, std::vector<int>{2});
+    CrossEntropyLoss criterion;
+    Tensor loss = criterion.forward(logits, targets);
+    assert(loss.nelem() == 1);
+
+    // Hand-computed reference using log-sum-exp on each row
+    const float row0LogSumExp = std::log(std::exp(2.0f) + std::exp(1.0f) + std::exp(0.1f));
+    const float row1LogSumExp = std::log(std::exp(0.1f) + std::exp(1.0f) + std::exp(2.0f));
+    const float expectedLoss = ((row0LogSumExp - 2.0f) + (row1LogSumExp - 2.0f)) / 2.0f;
+    assert(approx_equal(loss[0], expectedLoss, 1e-4f));
+
+    // Confidently correct predictions should give a near-zero loss
+    Tensor confidentLogits({10.0f, -10.0f, -10.0f, -10.0f, 10.0f, -10.0f}, {2, 3});
+    Tensor confidentTargets(std::vector<float>{0.0f, 1.0f}, std::vector<int>{2});
+    Tensor confidentLoss = criterion.forward(confidentLogits, confidentTargets);
+    assert(confidentLoss[0] < 1e-3f);
+}
+
 } // namespace
 
-int main(int argc, char **argv) {
-    test_shape_and_fill();
-    test_requires_grad_flag();
-    test_inplace_arithmetic();
-    test_copy_and_move_semantics();
+int main() {
+    double total_us = 0.0;
 
+    std::cout << "Benchmark results:\n";
+    total_us += run_benchmark("test_shape_and_fill", test_shape_and_fill);
+    total_us += run_benchmark("test_requires_grad_flag", test_requires_grad_flag);
+    total_us += run_benchmark("test_inplace_arithmetic", test_inplace_arithmetic);
+    total_us += run_benchmark("test_copy_and_move_semantics", test_copy_and_move_semantics);
+    total_us += run_benchmark("test_mse_loss", test_mse_loss);
+    total_us += run_benchmark("test_cross_entropy_loss", test_cross_entropy_loss);
+
+    std::cout << std::left << std::setw(32) << "total" << " " << std::fixed << std::setprecision(2) << total_us
+              << " us\n";
     std::cout << "Pass!\n";
 
     if (argc >= 3) {
