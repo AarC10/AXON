@@ -1,7 +1,7 @@
 #ifndef AXON_CSVLOADER_H
 #define AXON_CSVLOADER_H
 
-#include "core/Tensor.h"
+#include "core/TensorImpl.h"
 
 #include <string>
 #include <utility>

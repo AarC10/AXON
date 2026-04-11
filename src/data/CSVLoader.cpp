@@ -1,4 +1,5 @@
 #include "data/CSVLoader.h"
+#include "core/TensorImpl.h"
 
 #include <cctype>
 #include <fstream>
@@ -118,8 +119,8 @@ std::pair<Tensor, Tensor> load_csv(const std::string &path, int label_col, bool 
         ++row_count;
     }
 
-    Tensor x(features, {row_count, feature_count});
-    Tensor y(labels, {row_count, 1});
+    Tensor x = TensorImpl::from_data(features, {row_count, feature_count});
+    Tensor y = TensorImpl::from_data(labels, {row_count, 1});
 
     return {x, y};
 }

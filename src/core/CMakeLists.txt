@@ -1,3 +1,3 @@
 add_library(core
-    Tensor.cpp
+    TensorImpl.cpp
 )

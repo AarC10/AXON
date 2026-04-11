@@ -1,7 +1,7 @@
 #ifndef AXON_MSELOSS_H
 #define AXON_MSELOSS_H
 
-#include "core/Tensor.h"
+#include "core/TensorImpl.h"
 #include "loss/Loss.h"
 
 /**

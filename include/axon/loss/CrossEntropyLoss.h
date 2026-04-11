@@ -1,7 +1,7 @@
 #ifndef AXON_CROSSENTROPYLOSS_H
 #define AXON_CROSSENTROPYLOSS_H
 
-#include "core/Tensor.h"
+#include "core/TensorImpl.h"
 #include "loss/Loss.h"
 
 /**
