@@ -47,5 +47,5 @@ Tensor CrossEntropyLoss::forward(const Tensor &prediction, const Tensor &target)
     }
 
     const float meanNegativeLogLikelihood = negativeLogLikelihoodSum / static_cast<float>(batchSize);
-    return Tensor(std::vector<float>{meanNegativeLogLikelihood}, std::vector<int>{1});
+    return Tensor(std::vector<float>{meanNegativeLogLikelihood}, std::vector<int>{1}, true);
 }

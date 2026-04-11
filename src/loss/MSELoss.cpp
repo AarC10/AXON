@@ -21,5 +21,5 @@ Tensor MSELoss::forward(const Tensor &prediction, const Tensor &target) {
     }
 
     const float meanSquaredError = sumOfSquares / static_cast<float>(elementCount);
-    return Tensor(std::vector<float>{meanSquaredError}, std::vector<int>{1});
+    return Tensor(std::vector<float>{meanSquaredError}, std::vector<int>{1}, true);
 }
