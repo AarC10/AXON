@@ -502,11 +502,11 @@ Tensor& TensorImpl::grad() {
 }
 
 bool TensorImpl::has_grad() const {
-    return false;
+    return gradient != nullptr;
 }
 
 void TensorImpl::zero_grad() {
-
+    gradient = nullptr;
 }
 
 void TensorImpl::backward() {
