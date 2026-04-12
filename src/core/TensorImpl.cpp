@@ -459,6 +459,110 @@ Tensor clip(const Tensor& lhs, float min, float max) {
     return out;
 }
 
+Tensor matmul(const Tensor& lhs, const Tensor& rhs) {
+    const int lhs_dims = lhs->ndim();
+    const int rhs_dims = rhs->ndim();
+
+    if ((lhs_dims != 1 && lhs_dims != 2) || (rhs_dims != 1 && rhs_dims != 2)) {
+        throw std::invalid_argument("matmul currently supports only 1D or 2D tensors");
+    }
+
+    const int lhs_rows = lhs_dims == 1 ? 1 : lhs->size(0);
+    const int lhs_cols = lhs_dims == 1 ? lhs->size(0) : lhs->size(1);
+    const int rhs_rows = rhs->size(0);
+    const int rhs_cols = rhs_dims == 1 ? 1 : rhs->size(1);
+
+    if (lhs_cols != rhs_rows) {
+        throw std::invalid_argument("matmul dimension mismatch");
+    }
+
+    std::vector<int> out_shape;
+    if (lhs_dims == 1 && rhs_dims == 1) {
+        out_shape = {1};
+    } else if (lhs_dims == 1 && rhs_dims == 2) {
+        out_shape = {rhs_cols};
+    } else if (lhs_dims == 2 && rhs_dims == 1) {
+        out_shape = {lhs_rows};
+    } else {
+        out_shape = {lhs_rows, rhs_cols};
+    }
+
+    Tensor out = Tensor(new TensorImpl(out_shape, lhs->require_grad || rhs->require_grad));
+
+    for (int row = 0; row < lhs_rows; ++row) {
+        for (int col = 0; col < rhs_cols; ++col) {
+            float sum = 0.0f;
+            for (int k = 0; k < lhs_cols; ++k) {
+                const int lhs_index = lhs_dims == 1 ? k : row * lhs_cols + k;
+                const int rhs_index = rhs_dims == 1 ? k : k * rhs_cols + col;
+                sum += lhs->at(lhs_index) * rhs->at(rhs_index);
+            }
+
+            const int out_index = (lhs_dims == 1 && rhs_dims == 1) ? 0 :
+                                  (lhs_dims == 1 && rhs_dims == 2) ? col :
+                                  (lhs_dims == 2 && rhs_dims == 1) ? row :
+                                  row * rhs_cols + col;
+            out->at(out_index) = sum;
+        }
+    }
+
+    if (out->require_grad) {
+        out->inputs = {lhs, rhs};
+        out->is_leaf = false;
+        out->gradient_func = [lhs, rhs, lhs_dims, rhs_dims, lhs_rows, lhs_cols, rhs_cols](const Tensor& grad) {
+            if (lhs->require_grad) {
+                Tensor lhs_grad = TensorImpl::zeros(lhs->get_shape());
+
+                for (int row = 0; row < lhs_rows; ++row) {
+                    for (int k = 0; k < lhs_cols; ++k) {
+                        float sum = 0.0f;
+                        for (int col = 0; col < rhs_cols; ++col) {
+                            const int grad_index = (lhs_dims == 1 && rhs_dims == 1) ? 0 :
+                                                   (lhs_dims == 1 && rhs_dims == 2) ? col :
+                                                   (lhs_dims == 2 && rhs_dims == 1) ? row :
+                                                   row * rhs_cols + col;
+                            const int rhs_index = rhs_dims == 1 ? k : k * rhs_cols + col;
+                            sum += grad->at(grad_index) * rhs->at(rhs_index);
+                        }
+
+                        const int lhs_index = lhs_dims == 1 ? k : row * lhs_cols + k;
+                        lhs_grad->at(lhs_index) = sum;
+                    }
+                }
+
+                lhs->gradient = lhs->gradient ? lhs->gradient + lhs_grad : lhs_grad;
+            }
+
+            if (rhs->require_grad) {
+                Tensor rhs_grad = TensorImpl::zeros(rhs->get_shape());
+                const int rhs_rows_local = rhs->size(0);
+                const int rhs_cols_local = rhs_dims == 1 ? 1 : rhs->size(1);
+
+                for (int k = 0; k < rhs_rows_local; ++k) {
+                    for (int col = 0; col < rhs_cols_local; ++col) {
+                        float sum = 0.0f;
+                        for (int row = 0; row < lhs_rows; ++row) {
+                            const int lhs_index = lhs_dims == 1 ? k : row * lhs_cols + k;
+                            const int grad_index = (lhs_dims == 1 && rhs_dims == 1) ? 0 :
+                                                   (lhs_dims == 1 && rhs_dims == 2) ? col :
+                                                   (lhs_dims == 2 && rhs_dims == 1) ? row :
+                                                   row * rhs_cols + col;
+                            sum += lhs->at(lhs_index) * grad->at(grad_index);
+                        }
+
+                        const int rhs_index = rhs_dims == 1 ? k : k * rhs_cols_local + col;
+                        rhs_grad->at(rhs_index) = sum;
+                    }
+                }
+
+                rhs->gradient = rhs->gradient ? rhs->gradient + rhs_grad : rhs_grad;
+            }
+        };
+    }
+
+    return out;
+}
+
 Tensor operator==(const ConstTensor& lhs, const ConstTensor& rhs) {
     Tensor out = lhs->binary_op(rhs, [](const float a, const float b) { return a == b ? 1.0f : 0.0f; });
     out->detach_grad_state();
@@ -502,11 +606,11 @@ Tensor& TensorImpl::grad() {
 }
 
 bool TensorImpl::has_grad() const {
-    return false;
+    return static_cast<bool>(gradient);
 }
 
 void TensorImpl::zero_grad() {
-
+    gradient = nullptr;
 }
 
 void TensorImpl::backward() {
@@ -565,6 +669,7 @@ void TensorImpl::backward() {
 void TensorImpl::set_gradient_func(GradientFunc func, const std::vector<Tensor>& inputs) {
     this->gradient_func = func;
     this->inputs = inputs;
+    is_leaf = inputs.empty();
 }
 
 bool TensorImpl::get_is_leaf() const { return is_leaf; }
