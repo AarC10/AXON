@@ -47,5 +47,43 @@ Tensor CrossEntropyLoss::forward(const Tensor &prediction, const Tensor &target)
     }
 
     const float meanNegativeLogLikelihood = negativeLogLikelihoodSum / static_cast<float>(batchSize);
-    return TensorImpl::full(std::vector<int>{1}, meanNegativeLogLikelihood, true);
+    Tensor loss = TensorImpl::full(std::vector<int>{1}, meanNegativeLogLikelihood, prediction->get_require_grad());
+
+    if (prediction->get_require_grad()) {
+        loss->set_gradient_func(
+            [prediction, target, batchSize, classCount](const Tensor& grad) {
+                const float upstream = grad->at(0);
+                Tensor prediction_grad = TensorImpl::zeros(prediction->get_shape());
+
+                for (int sampleIndex = 0; sampleIndex < batchSize; ++sampleIndex) {
+                    float maxLogit = prediction->at({sampleIndex, 0});
+                    for (int classIndex = 1; classIndex < classCount; ++classIndex) {
+                        const float logit = prediction->at({sampleIndex, classIndex});
+                        if (logit > maxLogit) {
+                            maxLogit = logit;
+                        }
+                    }
+
+                    float shiftedExpSum = 0.0f;
+                    for (int classIndex = 0; classIndex < classCount; ++classIndex) {
+                        shiftedExpSum += std::exp(prediction->at({sampleIndex, classIndex}) - maxLogit);
+                    }
+
+                    const int targetClass = static_cast<int>(target->at({sampleIndex}));
+                    for (int classIndex = 0; classIndex < classCount; ++classIndex) {
+                        const float probability =
+                            std::exp(prediction->at({sampleIndex, classIndex}) - maxLogit) / shiftedExpSum;
+                        const float targetIndicator = classIndex == targetClass ? 1.0f : 0.0f;
+                        prediction_grad->at({sampleIndex, classIndex}) =
+                            (upstream / static_cast<float>(batchSize)) * (probability - targetIndicator);
+                    }
+                }
+
+                prediction->grad() =
+                    prediction->has_grad() ? prediction->grad() + prediction_grad : prediction_grad;
+            },
+            {prediction});
+    }
+
+    return loss;
 }
