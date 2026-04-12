@@ -1,5 +1,14 @@
 #include "nn/Module.h"
 
-std::vector<Tensor> Module::parameters() { return {}; }
+#include <memory>
+#include <vector>
 
-void Module::zero_grad() {}
+std::vector<std::shared_ptr<TensorImpl>> Module::parameters() { return {}; }
+
+void Module::zero_grad() {
+    for (const std::shared_ptr<TensorImpl> &parameter : parameters()) {
+        if (parameter) {
+            parameter->zero_grad();
+        }
+    }
+}
