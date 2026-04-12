@@ -12,11 +12,12 @@
 #include <iostream>
 #include <string>
 #include <utility>
+
 namespace {
 
-bool approx_equal(float a, float b, float eps = 1e-5f) {
-    return std::fabs(a - b) <= eps;
-}
+using Clock = std::chrono::steady_clock;
+
+bool approx_equal(float a, float b, float eps = 1e-5f) { return std::fabs(a - b) <= eps; }
 
 void print_tensor(const Tensor &tensor, const std::string &name) {
     std::cout << name << " shape: {";
@@ -58,7 +59,7 @@ void print_tensor(const Tensor &tensor, const std::string &name) {
     }
 }
 
-double run_benchmark(std::string_view name, const std::function<void()>& test) {
+double run_benchmark(std::string_view name, const std::function<void()> &test) {
     const auto start = Clock::now();
     test();
     const auto end = Clock::now();
@@ -145,8 +146,8 @@ void test_copy_and_move_semantics() {
 
 void test_backprop_basic() {
     auto a = TensorImpl::full({1}, 100.0f, true);
-    auto b = TensorImpl::full({1},  10.0f, true);
-    auto c = TensorImpl::full({1},   1.0f, true);
+    auto b = TensorImpl::full({1}, 10.0f, true);
+    auto c = TensorImpl::full({1}, 1.0f, true);
     auto d = a + b;
     auto e = b + c;
     auto f = d + e;
@@ -327,7 +328,7 @@ void test_cross_entropy_loss() {
 
 } // namespace
 
-int main() {
+int main(int argc, char **argv) {
     double total_us = 0.0;
 
     std::cout << "Benchmark results:\n";
