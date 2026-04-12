@@ -4,6 +4,7 @@
 #include "data/CSVLoader.h"
 #include "loss/CrossEntropyLoss.h"
 #include "loss/MSELoss.h"
+#include "optimizers/SGD.h"
 
 #include <cassert>
 #include <chrono>
@@ -18,6 +19,18 @@ namespace {
 using Clock = std::chrono::steady_clock;
 
 bool approx_equal(float a, float b, float eps = 1e-5f) { return std::fabs(a - b) <= eps; }
+
+void require_true(bool condition, const std::string& message) {
+    if (!condition) {
+        throw std::runtime_error(message);
+    }
+}
+
+void require_close(float actual, float expected, const std::string& message, float eps = 1e-5f) {
+    if (!approx_equal(actual, expected, eps)) {
+        throw std::runtime_error(message);
+    }
+}
 
 void print_tensor(const Tensor &tensor, const std::string &name) {
     std::cout << name << " shape: {";
@@ -291,6 +304,32 @@ void test_backprop_clip_abs() {
     }
 }
 
+void test_zero_grad_clears_accumulated_gradient() {
+    auto a = TensorImpl::full({1}, 4.0f, true);
+    auto b = TensorImpl::full({1}, 3.0f, true);
+    auto c = a * b;
+
+    c->backward();
+    require_true(a->has_grad(), "expected backward() to populate a gradient before zero_grad()");
+    require_close(a->grad()->at(0), 3.0f, "unexpected gradient before zero_grad()");
+
+    a->zero_grad();
+    require_true(!a->has_grad(), "expected zero_grad() to clear the accumulated gradient");
+}
+
+void test_sgd_step_updates_parameter() {
+    Tensor parameter = TensorImpl::full({1}, 5.0f, true);
+    Tensor target = TensorImpl::full({1}, 1.0f, true);
+    Tensor loss = parameter * target;
+
+    loss->backward();
+
+    SGD optimizer({parameter}, 0.1f);
+    optimizer.step();
+
+    require_close(parameter->at(0), 4.9f, "SGD step did not update parameter value");
+}
+
 void test_mse_loss() {
     // Mean of squared differences: ((1-0)^2 + (2-0)^2 + (3-0)^2 + (4-0)^2) / 4 = 30 / 4 = 7.5
     Tensor prediction = TensorImpl::from_data({1.0f, 2.0f, 3.0f, 4.0f}, {2, 2});
@@ -303,6 +342,19 @@ void test_mse_loss() {
     // Identical tensors should produce a zero loss
     Tensor identicalLoss = criterion.forward(prediction, prediction);
     assert(approx_equal(identicalLoss->at(0), 0.0f));
+}
+
+void test_mse_loss_backward() {
+    Tensor prediction = TensorImpl::from_data({1.0f, 3.0f}, {2}, true);
+    Tensor target = TensorImpl::from_data({0.0f, 1.0f}, {2});
+    MSELoss criterion;
+
+    Tensor loss = criterion.forward(prediction, target);
+    loss->backward();
+
+    require_true(prediction->has_grad(), "MSE backward did not populate prediction gradient");
+    require_close(prediction->grad()->at(0), 1.0f, "unexpected MSE gradient for prediction[0]");
+    require_close(prediction->grad()->at(1), 2.0f, "unexpected MSE gradient for prediction[1]");
 }
 
 void test_cross_entropy_loss() {
@@ -326,6 +378,22 @@ void test_cross_entropy_loss() {
     assert(confidentLoss->at(0) < 1e-3f);
 }
 
+void test_cross_entropy_loss_backward() {
+    Tensor logits = TensorImpl::from_data({2.0f, 1.0f, 0.1f}, {1, 3}, true);
+    Tensor targets = TensorImpl::from_data({0.0f}, {1});
+    CrossEntropyLoss criterion;
+
+    Tensor loss = criterion.forward(logits, targets);
+    loss->backward();
+
+    require_true(logits->has_grad(), "cross entropy backward did not populate logits gradient");
+
+    const float denom = std::exp(2.0f) + std::exp(1.0f) + std::exp(0.1f);
+    require_close(logits->grad()->at(0), std::exp(2.0f) / denom - 1.0f, "unexpected CE gradient for logits[0]", 1e-4f);
+    require_close(logits->grad()->at(1), std::exp(1.0f) / denom, "unexpected CE gradient for logits[1]", 1e-4f);
+    require_close(logits->grad()->at(2), std::exp(0.1f) / denom, "unexpected CE gradient for logits[2]", 1e-4f);
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -341,8 +409,12 @@ int main(int argc, char **argv) {
     total_us += run_benchmark("test_backprop_math", test_backprop_math);
     total_us += run_benchmark("test_backprop_complex", test_backprop_complex);
     total_us += run_benchmark("test_backprop_clip_abs", test_backprop_clip_abs);
+    total_us += run_benchmark("test_zero_grad_clears_accumulated_gradient", test_zero_grad_clears_accumulated_gradient);
+    total_us += run_benchmark("test_sgd_step_updates_parameter", test_sgd_step_updates_parameter);
     total_us += run_benchmark("test_mse_loss", test_mse_loss);
+    total_us += run_benchmark("test_mse_loss_backward", test_mse_loss_backward);
     total_us += run_benchmark("test_cross_entropy_loss", test_cross_entropy_loss);
+    total_us += run_benchmark("test_cross_entropy_loss_backward", test_cross_entropy_loss_backward);
 
     std::cout << std::left << std::setw(32) << "total" << " " << std::fixed << std::setprecision(2) << total_us
               << " us\n";
