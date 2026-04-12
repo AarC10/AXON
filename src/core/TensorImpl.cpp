@@ -606,7 +606,7 @@ Tensor& TensorImpl::grad() {
 }
 
 bool TensorImpl::has_grad() const {
-    return static_cast<bool>(gradient);
+    return gradient != nullptr;
 }
 
 void TensorImpl::zero_grad() {
