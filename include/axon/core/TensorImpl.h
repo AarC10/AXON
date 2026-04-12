@@ -4,17 +4,18 @@
 #include <memory>
 #include <vector>
 
-class Tensor {
-  public:
-    /** @brief Constructs an empty tensor */
-    Tensor() = default;
+class TensorImpl;
+using Tensor = std::shared_ptr<TensorImpl>;
+using ConstTensor = std::shared_ptr<const TensorImpl>;
 
-    /**
-     * @brief Constructs a zero-initialized tensor with the provided shape
-     * @param shape Dimensions of the tensor
-     * @param require_grad Whether gradients should be tracked
-     */
-    explicit Tensor(const std::vector<int> &shape, bool require_grad = false);
+class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
+  public:
+    /** @brief Destroys the tensor */
+    ~TensorImpl() = default;
+
+    // ==================================
+    // ======== Static Factories ========
+    // ==================================
 
     /**
      * @brief Constructs a tensor from existing data and shape
@@ -22,40 +23,7 @@ class Tensor {
      * @param shape Dimensions of the tensor
      * @param require_grad Whether gradients should be tracked
      */
-    Tensor(const std::vector<float> &data, const std::vector<int> &shape, bool require_grad = false);
-
-    /**
-     * @brief Copy-constructs a tensor
-     * @param other Tensor to copy from
-     */
-    Tensor(const Tensor &other);
-
-    /**
-     * @brief Move-constructs a tensor
-     * @param other Tensor to move from
-     */
-    Tensor(Tensor &&other);
-
-    /**
-     * @brief Copy-assigns from another tensor
-     * @param other Tensor to copy from
-     * @return Reference to this tensor
-     */
-    Tensor &operator=(const Tensor &other);
-
-    /**
-     * @brief Move-assigns from another tensor
-     * @param other Tensor to move from
-     * @return Reference to this tensor
-     */
-    Tensor &operator=(Tensor &&other);
-
-    /** @brief Destroys the tensor */
-    ~Tensor() = default;
-
-    // ==================================
-    // ======== Static Factories ========
-    // ==================================
+    static Tensor from_data(const std::vector<float> &data, const std::vector<int> &shape, bool require_grad = false);
 
     /**
      * @brief Creates a tensor filled with zeros
@@ -115,6 +83,14 @@ class Tensor {
      * @return A 1D tensor containing the generated range
      */
     static Tensor arange(float start, float stop, float step = 1.0f, bool require_grad = false);
+
+    /**
+     * @brief Creates a copy of a tensor
+     * @param other Tensor to copy
+     * @return A copy of the input tensor
+     */
+    static Tensor copy(const Tensor &other);
+
     // ==================================
     // ============== Shape =============
     // ==================================
@@ -179,14 +155,14 @@ class Tensor {
      * @param idx Flat element index
      * @return Element value
      */
-    float operator[](int idx) const;
+    float at(int idx) const;
 
     /**
      * @brief Returns a mutable reference at a flat index
      * @param idx Flat element index
      * @return Mutable reference to the addressed element
      */
-    float &operator[](int idx);
+    float& at(int idx);
     // ==================================
     // ======= Shape Manipulation =======
     // ==================================
@@ -196,115 +172,121 @@ class Tensor {
     // ==================================
 
     template <typename Operation>
-    Tensor binary_op(const Tensor &rhs, Operation op) const;
+    Tensor binary_op(const ConstTensor &rhs, Operation op) const;
 
     /** @brief Elementwise tensor addition */
-    Tensor operator+(const Tensor &rhs) const;
+    friend Tensor operator+(const Tensor& lhs, const Tensor& rhs);
 
     /** @brief Elementwise tensor subtraction */
-    Tensor operator-(const Tensor &rhs) const;
+    friend Tensor operator-(const Tensor& lhs, const Tensor& rhs);
 
     /** @brief Elementwise tensor multiplication */
-    Tensor operator*(const Tensor &rhs) const;
+    friend Tensor operator*(const Tensor& lhs, const Tensor& rhs);
 
     /** @brief Elementwise tensor division */
-    Tensor operator/(const Tensor &rhs) const;
+    friend Tensor operator/(const Tensor& lhs, const Tensor& rhs);
 
     /** @brief Elementwise unary negation */
-    Tensor operator-() const;
+    friend Tensor operator-(const Tensor& tensor);
 
     /** @brief Adds a scalar to every element */
-    Tensor operator+(float scalar) const;
+    friend Tensor operator+(const Tensor& tensor, float scalar);
 
     /** @brief Subtracts a scalar from every element */
-    Tensor operator-(float scalar) const;
+    friend Tensor operator-(const Tensor& tensor, float scalar);
 
     /** @brief Multiplies every element by a scalar */
-    Tensor operator*(float scalar) const;
+    friend Tensor operator*(const Tensor& tensor, float scalar);
 
     /** @brief Divides every element by a scalar */
-    Tensor operator/(float scalar) const;
+    friend Tensor operator/(const Tensor& tensor, float scalar);
 
     /** @brief In-place elementwise tensor addition */
-    Tensor &operator+=(const Tensor &rhs);
+    friend Tensor &operator+=(Tensor& lhs, const ConstTensor &rhs);
 
     /** @brief In-place elementwise tensor subtraction */
-    Tensor &operator-=(const Tensor &rhs);
+    friend Tensor &operator-=(Tensor& lhs, const ConstTensor &rhs);
 
     /** @brief In-place elementwise tensor multiplication */
-    Tensor &operator*=(const Tensor &rhs);
+    friend Tensor &operator*=(Tensor& lhs, const ConstTensor &rhs);
 
     /** @brief In-place elementwise tensor division */
-    Tensor &operator/=(const Tensor &rhs);
+    friend Tensor &operator/=(Tensor& lhs, const ConstTensor &rhs);
 
     /** @brief Adds a tensor to a lhs scalar */
-    friend Tensor operator+(float scalar, const Tensor &tensor);
+    friend Tensor operator+(float scalar, const Tensor& tensor);
 
     /** @brief Subtracts a tensor from a lhs scalar   */
-    friend Tensor operator-(float scalar, const Tensor &tensor);
+    friend Tensor operator-(float scalar, const Tensor& tensor);
 
     /** @brief Multiplies a lhs scalar by a tensor */
-    friend Tensor operator*(float scalar, const Tensor &tensor);
+    friend Tensor operator*(float scalar, const Tensor& tensor);
 
     /** @brief Divides a lhs scalar by a tensor */
-    friend Tensor operator/(float scalar, const Tensor &tensor);
+    friend Tensor operator/(float scalar, const Tensor& tensor);
 
     // ==================================
     // ======== Elementwise Math ========
     // ==================================
 
     /** @brief Elementwise exponential */
-    Tensor exp() const;
+    friend Tensor exp(const Tensor& lhs);
 
     /** @brief Elementwise natural logarithm */
-    Tensor log() const;
+    friend Tensor log(const Tensor& lhs);
 
     /** @brief Elementwise square root */
-    Tensor sqrt() const;
+    friend Tensor sqrt(const Tensor& lhs);
 
     /** @brief Elementwise absolute value */
-    Tensor abs() const;
+    friend Tensor abs(const Tensor& lhs);
 
     /**
      * @brief Raises each element to a scalar exponent
+     * @param lhs Tensor to raise to a power
      * @param exponent Scalar exponent
      * @return Result tensor
      */
-    Tensor pow(float exponent) const;
+    friend Tensor pow(const Tensor& lhs, float exponent);
 
     /**
      * @brief Raises each element to tensor-provided exponents
+     * @param lhs Tensor to raise to a power
      * @param exp Elementwise exponents
      * @return Result tensor
      */
-    Tensor pow(const Tensor &exp) const;
+    friend Tensor pow(const Tensor& lhs, const Tensor& exp);
 
     /**
      * @brief Clamps values to a closed interval
+     * @param lhs Tensor to clamp
      * @param min Lower bound
      * @param max Upper bound
      * @return Clipped tensor
      */
-    Tensor clip(float min, float max) const;
+    friend Tensor clip(const Tensor& lhs, float min, float max);
 
-    // ======== Comparison Operations ========
+    // ==================================
+    // ====== Comparison Operations =====
+    // ==================================
+
     /** @brief Elementwise equality comparison */
-    Tensor operator==(const Tensor &rhs) const;
+    friend Tensor operator==(const ConstTensor& lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise inequality comparison */
-    Tensor operator!=(const Tensor &rhs) const;
+    friend Tensor operator!=(const ConstTensor& lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise LT comparison */
-    Tensor operator<(const Tensor &rhs) const;
+    friend Tensor operator<(const ConstTensor& lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise LTE comparison */
-    Tensor operator<=(const Tensor &rhs) const;
+    friend Tensor operator<=(const ConstTensor& lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise GT comparison */
-    Tensor operator>(const Tensor &rhs) const;
+    friend Tensor operator>(const ConstTensor& lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise GTE comparison */
-    Tensor operator>=(const Tensor &rhs) const;
+    friend Tensor operator>=(const ConstTensor& lhs, const ConstTensor &rhs);
 
     // ==================================
     // ====== Activation Functions ======
@@ -336,12 +318,6 @@ class Tensor {
     Tensor &grad();
 
     /**
-     * @brief Get a const ref to the gradient accumulated tensor
-     * @return Const ref to gradient tensor
-     */
-    const Tensor &grad() const;
-
-    /**
      * @brief Get whether the tensor has a gradient
      * @return True if the tensor has a gradient, false otherwise
      */
@@ -358,9 +334,9 @@ class Tensor {
     // ======== Autograd Handling ========
     // ==================================
 
-    using GradientFunc = std::function<void(const Tensor &)>;
+    using GradientFunc = std::function<void(const Tensor&)>;
 
-    void set_gradient_func(GradientFunc func, const std::vector<std::shared_ptr<Tensor>> &inputs);
+    void set_gradient_func(GradientFunc func, const std::vector<Tensor> &inputs);
 
     bool get_is_leaf() const;
 
@@ -374,10 +350,41 @@ class Tensor {
     bool require_grad = false;
     bool is_leaf = true;
 
-    std::shared_ptr<Tensor> gradient;
+    Tensor gradient;
+    uint backprop_dep_count = 0;
 
-    std::vector<std::shared_ptr<Tensor>> inputs;
+    std::vector<Tensor> inputs;
     GradientFunc gradient_func;
+
+    /** @brief Constructs an empty tensor */
+    TensorImpl() = default;
+
+    /**
+     * @brief Constructs a zero-initialized tensor with the provided shape
+     * @param shape Dimensions of the tensor
+     * @param require_grad Whether gradients should be tracked
+     */
+    explicit TensorImpl(const std::vector<int> &shape, bool require_grad = false);
+
+    /**
+     * @brief Constructs a tensor from existing data and shape
+     * @param data Flat data buffer
+     * @param shape Dimensions of the tensor
+     * @param require_grad Whether gradients should be tracked
+     */
+    TensorImpl(const std::vector<float> &data, const std::vector<int> &shape, bool require_grad = false);
+
+    /**
+     * @brief Copy-constructs a tensor
+     * @param other TensorImpl to copy from
+     */
+    TensorImpl(const TensorImpl &other);
+
+    /**
+     * @brief Move-constructs a tensor
+     * @param other TensorImpl to move from
+     */
+    TensorImpl(TensorImpl &&other);
 
     /**
      * @brief Converts a multidimensional index to a flat storage index
@@ -410,6 +417,7 @@ class Tensor {
     static std::vector<int> broadcast_shape(const std::vector<int> &shape_one, const std::vector<int> &shape_two);
 };
 
-#include "core/Tensor.tpp"
+#include "core/TensorImpl.tpp"
+
 
 #endif // AXON_TENSOR_H

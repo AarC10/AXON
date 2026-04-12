@@ -10,7 +10,7 @@ class SGD : public Optimizer {
      * @param parameters Tensors tracked by the optimizer
      * @param learning_rate Per-step learning rate
      */
-    explicit SGD(std::vector<std::shared_ptr<Tensor>> parameters, float learning_rate = 1e-3f);
+    explicit SGD(std::vector<Tensor> parameters, float learning_rate = 1e-3f);
 
     /** @brief Performs one optimization step */
     void step() override;

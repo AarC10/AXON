@@ -3,11 +3,11 @@
 #include <stdexcept>
 
 Tensor MSELoss::forward(const Tensor &prediction, const Tensor &target) {
-    if (prediction.get_shape() != target.get_shape()) {
+    if (prediction->get_shape() != target->get_shape()) {
         throw std::invalid_argument("MSELoss: prediction and target shapes must match");
     }
 
-    const int elementCount = prediction.nelem();
+    const int elementCount = prediction->nelem();
     if (elementCount == 0) {
         throw std::invalid_argument("MSELoss: cannot compute loss over an empty tensor");
     }
@@ -17,9 +17,9 @@ Tensor MSELoss::forward(const Tensor &prediction, const Tensor &target) {
 
     float sumOfSquares = 0.0f;
     for (int i = 0; i < elementCount; ++i) {
-        sumOfSquares += squaredDifference[i];
+        sumOfSquares += squaredDifference->at(i);
     }
 
     const float meanSquaredError = sumOfSquares / static_cast<float>(elementCount);
-    return Tensor(std::vector<float>{meanSquaredError}, std::vector<int>{1}, true);
+    return TensorImpl::full(std::vector<int>{1}, meanSquaredError, true);
 }

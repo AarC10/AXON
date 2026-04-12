@@ -1,7 +1,7 @@
 #ifndef AXON_LOSS_H
 #define AXON_LOSS_H
 
-#include "core/Tensor.h"
+#include "core/TensorImpl.h"
 
 /**
  * @brief Abstract base class for loss functions

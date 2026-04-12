@@ -13,7 +13,7 @@ class Adam : public Optimizer {
      * @param beta2 Exponential decay for second moment estimates
      * @param epsilon Stability constant for denominator updates
      */
-    Adam(std::vector<std::shared_ptr<Tensor>> parameters, float learning_rate = 1e-3f, float beta1 = 0.9f,
+    Adam(std::vector<Tensor> parameters, float learning_rate = 1e-3f, float beta1 = 0.9f,
          float beta2 = 0.999f, float epsilon = 1e-8f);
 
     /** @brief Performs one optimization step */
