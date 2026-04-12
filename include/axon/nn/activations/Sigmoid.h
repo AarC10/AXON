@@ -13,7 +13,7 @@ class Sigmoid : public Module {
     Sigmoid() = default;
 
     /** @copydoc Module::forward */
-    Tensor forward(const TensorImpl &input) override;
+    Tensor forward(const Tensor &input) override;
 };
 
 #endif // AXON_SIGMOID_H

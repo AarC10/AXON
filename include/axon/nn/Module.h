@@ -22,7 +22,7 @@ class Module {
      * @param input Input tensor
      * @return Output tensor
      */
-    virtual Tensor forward(const TensorImpl &input) = 0;
+    virtual Tensor forward(const Tensor &input) = 0;
 
     /**
      * @brief Returns all learnable parameters of the module

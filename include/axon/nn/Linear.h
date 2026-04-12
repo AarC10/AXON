@@ -21,7 +21,7 @@ class Linear : public Module {
     Linear(int in_features, int out_features, bool bias = true);
 
     /** @copydoc Module::forward */
-    Tensor forward(const TensorImpl &input) override;
+    Tensor forward(const Tensor &input) override;
 
     /** @copydoc Module::parameters */
     std::vector<std::shared_ptr<TensorImpl>> parameters() override;

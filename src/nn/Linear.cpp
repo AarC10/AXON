@@ -28,8 +28,12 @@ Linear::Linear(int in_features, int out_features, bool bias)
     }
 }
 
-Tensor Linear::forward(const TensorImpl &input) {
-    const std::vector<int> &input_shape = input.get_shape();
+Tensor Linear::forward(const Tensor &input) {
+    if (!input) {
+        throw std::invalid_argument("Linear::forward received a null input tensor");
+    }
+
+    const std::vector<int> &input_shape = input->get_shape();
     const bool is_vector_input = input_shape.size() == 1;
     const bool is_batched_input = input_shape.size() == 2;
 
@@ -47,7 +51,7 @@ Tensor Linear::forward(const TensorImpl &input) {
                                                           : std::vector<int>{batch_size, out_features};
 
     Tensor output = TensorImpl::zeros(output_shape,
-                                      input.get_require_grad() || weight->get_require_grad() ||
+                                      input->get_require_grad() || weight->get_require_grad() ||
                                           (use_bias && bias_tensor && bias_tensor->get_require_grad()));
 
     for (int batch = 0; batch < batch_size; ++batch) {
@@ -56,7 +60,7 @@ Tensor Linear::forward(const TensorImpl &input) {
 
             for (int in_feature = 0; in_feature < in_features; ++in_feature) {
                 const int input_index = is_vector_input ? in_feature : batch * in_features + in_feature;
-                sum += input.at(input_index) * weight->at(out_feature * in_features + in_feature);
+                sum += input->at(input_index) * weight->at(out_feature * in_features + in_feature);
             }
 
             const int output_index = is_vector_input ? out_feature : batch * out_features + out_feature;
@@ -68,14 +72,13 @@ Tensor Linear::forward(const TensorImpl &input) {
         return output;
     }
 
-    Tensor input_tensor = std::const_pointer_cast<TensorImpl>(input.shared_from_this());
-    std::vector upstream_inputs{input_tensor, weight};
+    std::vector upstream_inputs{input, weight};
     if (use_bias && bias_tensor) {
         upstream_inputs.push_back(bias_tensor);
     }
 
     output->set_gradient_func(
-        [input_tensor, weight = this->weight, bias = this->bias_tensor, batch_size, is_vector_input,
+        [input_tensor = input, weight = this->weight, bias = this->bias_tensor, batch_size, is_vector_input,
          use_bias = this->use_bias, in_features = this->in_features, out_features = this->out_features](
             const Tensor &grad) {
             if (input_tensor->get_require_grad()) {

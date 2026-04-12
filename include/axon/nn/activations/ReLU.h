@@ -13,7 +13,7 @@ class ReLU : public Module {
     ReLU() = default;
 
     /** @copydoc Module::forward */
-    Tensor forward(const TensorImpl &input) override;
+    Tensor forward(const Tensor &input) override;
 };
 
 #endif // AXON_RELU_H

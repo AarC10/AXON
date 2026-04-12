@@ -325,7 +325,7 @@ void test_matmul() {
 void test_relu() {
     ReLU relu;
     Tensor x = TensorImpl::from_data({-1.0f, 0.0f, 2.0f}, {3}, true);
-    Tensor y = relu.forward(*x);
+    Tensor y = relu.forward(x);
 
     assert(approx_equal(y->at(0), 0.0f));
     assert(approx_equal(y->at(1), 0.0f));
@@ -340,7 +340,7 @@ void test_relu() {
 void test_sigmoid() {
     Sigmoid sigmoid;
     Tensor x = TensorImpl::from_data({0.0f}, {1}, true);
-    Tensor y = sigmoid.forward(*x);
+    Tensor y = sigmoid.forward(x);
 
     assert(approx_equal(y->at(0), 0.5f));
 
