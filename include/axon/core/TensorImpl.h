@@ -354,7 +354,7 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
     bool is_leaf = true;
 
     Tensor gradient;
-    uint backprop_dep_count = 0;
+    unsigned int backprop_dep_count = 0;
 
     std::vector<Tensor> inputs;
     GradientFunc gradient_func;
