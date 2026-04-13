@@ -4,7 +4,6 @@
 #include "core/TensorImpl.h"
 #include "nn/Module.h"
 
-#include <memory>
 #include <vector>
 
 /**
@@ -21,18 +20,18 @@ class Linear : public Module {
     Linear(int in_features, int out_features, bool bias = true);
 
     /** @copydoc Module::forward */
-    Tensor forward(const TensorImpl &input) override;
+    Tensor forward(const Tensor &input) override;
 
     /** @copydoc Module::parameters */
-    std::vector<std::shared_ptr<TensorImpl>> parameters() override;
+    std::vector<Tensor> parameters() override;
 
   private:
     int in_features;
     int out_features;
     bool use_bias;
 
-    std::shared_ptr<TensorImpl> weight;
-    std::shared_ptr<TensorImpl> bias_tensor;
+    Tensor weight;
+    Tensor bias_tensor;
 };
 
 #endif // AXON_LINEAR_H

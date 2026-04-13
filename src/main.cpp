@@ -4,6 +4,8 @@
 #include "data/CSVLoader.h"
 #include "loss/CrossEntropyLoss.h"
 #include "loss/MSELoss.h"
+#include "nn/activations/ReLU.h"
+#include "nn/activations/Sigmoid.h"
 #include "optimizers/SGD.h"
 
 #include <cassert>
@@ -304,6 +306,61 @@ void test_backprop_clip_abs() {
     }
 }
 
+void test_matmul() {
+    {
+        Tensor lhs = TensorImpl::from_data({1.0f, 2.0f, 3.0f, 4.0f}, {2, 2});
+        Tensor rhs = TensorImpl::from_data({5.0f, 6.0f, 7.0f, 8.0f}, {2, 2});
+        Tensor out = matmul(lhs, rhs);
+
+        assert(out->get_shape() == std::vector<int>({2, 2}));
+        assert(approx_equal(out->at(0), 19.0f));
+        assert(approx_equal(out->at(1), 22.0f));
+        assert(approx_equal(out->at(2), 43.0f));
+        assert(approx_equal(out->at(3), 50.0f));
+    }
+
+    {
+        Tensor lhs = TensorImpl::from_data({1.0f, 2.0f}, {2}, true);
+        Tensor rhs = TensorImpl::from_data({3.0f, 4.0f}, {2}, true);
+        Tensor out = matmul(lhs, rhs);
+
+        assert(out->get_shape() == std::vector<int>({1}));
+        assert(approx_equal(out->at(0), 11.0f));
+
+        out->backward();
+        assert(approx_equal(lhs->grad()->at(0), 3.0f));
+        assert(approx_equal(lhs->grad()->at(1), 4.0f));
+        assert(approx_equal(rhs->grad()->at(0), 1.0f));
+        assert(approx_equal(rhs->grad()->at(1), 2.0f));
+    }
+}
+
+void test_relu() {
+    ReLU relu;
+    Tensor x = TensorImpl::from_data({-1.0f, 0.0f, 2.0f}, {3}, true);
+    Tensor y = relu.forward(x);
+
+    assert(approx_equal(y->at(0), 0.0f));
+    assert(approx_equal(y->at(1), 0.0f));
+    assert(approx_equal(y->at(2), 2.0f));
+
+    y->backward();
+    assert(approx_equal(x->grad()->at(0), 0.0f));
+    assert(approx_equal(x->grad()->at(1), 0.0f));
+    assert(approx_equal(x->grad()->at(2), 1.0f));
+}
+
+void test_sigmoid() {
+    Sigmoid sigmoid;
+    Tensor x = TensorImpl::from_data({0.0f}, {1}, true);
+    Tensor y = sigmoid.forward(x);
+
+    assert(approx_equal(y->at(0), 0.5f));
+
+    y->backward();
+    assert(approx_equal(x->grad()->at(0), 0.25f));
+}
+  
 void test_zero_grad_clears_accumulated_gradient() {
     auto a = TensorImpl::full({1}, 4.0f, true);
     auto b = TensorImpl::full({1}, 3.0f, true);
@@ -409,6 +466,9 @@ int main(int argc, char **argv) {
     total_us += run_benchmark("test_backprop_math", test_backprop_math);
     total_us += run_benchmark("test_backprop_complex", test_backprop_complex);
     total_us += run_benchmark("test_backprop_clip_abs", test_backprop_clip_abs);
+    total_us += run_benchmark("test_matmul", test_matmul);
+    total_us += run_benchmark("test_relu", test_relu);
+    total_us += run_benchmark("test_sigmoid", test_sigmoid);
     total_us += run_benchmark("test_zero_grad_clears_accumulated_gradient", test_zero_grad_clears_accumulated_gradient);
     total_us += run_benchmark("test_sgd_step_updates_parameter", test_sgd_step_updates_parameter);
     total_us += run_benchmark("test_mse_loss", test_mse_loss);

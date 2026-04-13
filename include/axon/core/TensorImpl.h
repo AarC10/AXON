@@ -292,6 +292,9 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
     // ====== Activation Functions ======
     // ==================================
 
+    /** @brief Matrix multiplication for 1D/2D tensors */
+    friend Tensor matmul(const Tensor& lhs, const Tensor& rhs);
+
     // ==================================
     // ====== Reduction Operations ======
     // ==================================

@@ -3,7 +3,6 @@
 
 #include "core/TensorImpl.h"
 
-#include <memory>
 #include <vector>
 
 /**
@@ -22,13 +21,13 @@ class Module {
      * @param input Input tensor
      * @return Output tensor
      */
-    virtual Tensor forward(const TensorImpl &input) = 0;
+    virtual Tensor forward(const Tensor &input) = 0;
 
     /**
      * @brief Returns all learnable parameters of the module
-     * @return Vector of shared pointers to parameter tensors
+     * @return Vector of parameter tensors
      */
-    virtual std::vector<std::shared_ptr<TensorImpl>> parameters();
+    virtual std::vector<Tensor> parameters();
 
     /**
      * @brief Zeroes the gradients of all learnable parameters
