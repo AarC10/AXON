@@ -16,11 +16,11 @@ Tensor Sigmoid::forward(const Tensor &input) {
 
     if (output->get_require_grad()) {
         output->set_gradient_func(
-            [input_tensor = input](const Tensor &grad) {
+            [input_tensor = input, output_tensor = output](const Tensor &grad) {
                 Tensor input_grad = TensorImpl::zeros(input_tensor->get_shape());
 
                 for (int i = 0; i < input_tensor->nelem(); ++i) {
-                    const float y = 1.0f / (1.0f + std::exp(-input_tensor->at(i)));
+                    const float y = output_tensor->at(i);
                     input_grad->at(i) = grad->at(i) * y * (1.0f - y);
                 }
 
