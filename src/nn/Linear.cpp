@@ -148,7 +148,7 @@ Tensor Linear::forward(const Tensor &input) {
     return output;
 }
 
-std::vector<std::shared_ptr<TensorImpl>> Linear::parameters() {
+std::vector<Tensor> Linear::parameters() {
     std::vector layer_parameters{weight};
     if (use_bias && bias_tensor) {
         layer_parameters.push_back(bias_tensor);
