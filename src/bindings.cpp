@@ -119,9 +119,7 @@ PYBIND11_MODULE(axon, module) {
     py::class_<Module>(module, "Module")
         .def("forward", &Module::forward)
         .def("parameters", &Module::parameters)
-        .def("zero_grad", &Module::zero_grad)
-        .def("save", &Module::save, py::arg("path"))
-        .def("load", &Module::load, py::arg("path"));
+        .def("zero_grad", &Module::zero_grad);
 
     py::class_<Linear, Module>(module, "Linear")
         .def(py::init<int, int, bool>(),

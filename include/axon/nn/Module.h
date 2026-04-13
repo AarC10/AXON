@@ -3,7 +3,6 @@
 
 #include "core/TensorImpl.h"
 
-#include <string>
 #include <vector>
 
 /**
@@ -34,18 +33,6 @@ class Module {
      * @brief Zeroes the gradients of all learnable parameters
      */
     virtual void zero_grad();
-
-    /**
-     * @brief Saves model parameters to a binary file
-     * @param path File path to write to
-     */
-    void save(const std::string &path);
-
-    /**
-     * @brief Loads model parameters from a binary file
-     * @param path File path to read from
-     */
-    void load(const std::string &path);
 };
 
 #endif // AXON_MODULE_H
