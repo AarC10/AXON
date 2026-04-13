@@ -1,12 +1,13 @@
 #include "data/CSVLoader.h"
+
 #include "core/TensorImpl.h"
 
 #include <cctype>
 #include <fstream>
-#include <unordered_map>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace axon::data {

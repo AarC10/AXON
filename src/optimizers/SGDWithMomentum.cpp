@@ -1,7 +1,6 @@
 #include "optimizers/SGDWithMomentum.h"
 
-SGDWithMomentum::SGDWithMomentum(std::vector<Tensor> parameters, const float learning_rate,
-                                 const float momentum)
+SGDWithMomentum::SGDWithMomentum(std::vector<Tensor> parameters, const float learning_rate, const float momentum)
     : Optimizer(std::move(parameters)), learningRate(learning_rate), momentumValue(momentum) {
     velocities.reserve(trackedParameters.size());
     for (const auto& parameter : trackedParameters) {

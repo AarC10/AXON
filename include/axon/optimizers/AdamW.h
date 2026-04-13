@@ -14,8 +14,8 @@ class AdamW : public Optimizer {
      * @param epsilon Stability constant for denominator updates
      * @param weight_decay Decoupled weight decay coefficient
      */
-    AdamW(std::vector<Tensor> parameters, float learning_rate = 1e-3f, float beta1 = 0.9f,
-          float beta2 = 0.999f, float epsilon = 1e-8f, float weight_decay = 1e-2f);
+    AdamW(std::vector<Tensor> parameters, float learning_rate = 1e-3f, float beta1 = 0.9f, float beta2 = 0.999f,
+          float epsilon = 1e-8f, float weight_decay = 1e-2f);
 
     /** @brief Performs one optimization step */
     void step() override;

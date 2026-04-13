@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Force release if no build type specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -51,6 +52,13 @@ add_library(AXON::axon ALIAS axon)
 target_link_libraries(axon INTERFACE core data nn optimizers loss)
 target_include_directories(axon INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/axon)
 
-# Below is temporary for now
-add_executable(axon_test src/main.cpp)
+add_executable(axon_test src/tests.cpp)
 target_link_libraries(axon_test PRIVATE axon)
+
+if(AXON_BUILD_PYTHON)
+  pybind11_add_module(pyaxon src/bindings.cpp)
+  target_link_libraries(pyaxon PRIVATE axon)
+  set_target_properties(pyaxon PROPERTIES OUTPUT_NAME axon)
+endif()
+
+add_subdirectory(examples)

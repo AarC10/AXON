@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-AdamW::AdamW(std::vector<Tensor> parameters, const float learning_rate, const float beta1,
-             const float beta2, const float epsilon, const float weight_decay)
+AdamW::AdamW(std::vector<Tensor> parameters, const float learning_rate, const float beta1, const float beta2,
+             const float epsilon, const float weight_decay)
     : Optimizer(std::move(parameters)), learningRate(learning_rate), beta1Value(beta1), beta2Value(beta2),
       epsilonValue(epsilon), weightDecay(weight_decay) {
     firstMomentEstimates.reserve(trackedParameters.size());
@@ -33,7 +33,8 @@ void AdamW::step() {
         secondMomentEstimates[i] *= TensorImpl::full(gradient->get_shape(), beta2Value);
         secondMomentEstimates[i] += (gradient * gradient) * TensorImpl::full(gradient->get_shape(), 1.0f - beta2Value);
 
-        Tensor firstMomentHat = firstMomentEstimates[i] / TensorImpl::full(gradient->get_shape(), firstMomentBiasCorrection);
+        Tensor firstMomentHat =
+            firstMomentEstimates[i] / TensorImpl::full(gradient->get_shape(), firstMomentBiasCorrection);
         Tensor secondMomentHat =
             secondMomentEstimates[i] / TensorImpl::full(gradient->get_shape(), secondMomentBiasCorrection);
         Tensor denominator = sqrt(secondMomentHat) + TensorImpl::full(gradient->get_shape(), epsilonValue);

@@ -47,12 +47,11 @@ Tensor Linear::forward(const Tensor &input) {
     }
 
     const int batch_size = is_vector_input ? 1 : input_shape[0];
-    const std::vector<int> output_shape = is_vector_input ? std::vector<int>{out_features}
-                                                          : std::vector<int>{batch_size, out_features};
+    const std::vector<int> output_shape =
+        is_vector_input ? std::vector<int>{out_features} : std::vector<int>{batch_size, out_features};
 
-    Tensor output = TensorImpl::zeros(output_shape,
-                                      input->get_require_grad() || weight->get_require_grad() ||
-                                          (use_bias && bias_tensor && bias_tensor->get_require_grad()));
+    Tensor output = TensorImpl::zeros(output_shape, input->get_require_grad() || weight->get_require_grad() ||
+                                                        (use_bias && bias_tensor && bias_tensor->get_require_grad()));
 
     for (int batch = 0; batch < batch_size; ++batch) {
         for (int out_feature = 0; out_feature < out_features; ++out_feature) {
@@ -79,8 +78,8 @@ Tensor Linear::forward(const Tensor &input) {
 
     output->set_gradient_func(
         [input_tensor = input, weight = this->weight, bias = this->bias_tensor, batch_size, is_vector_input,
-         use_bias = this->use_bias, in_features = this->in_features, out_features = this->out_features](
-            const Tensor &grad) {
+         use_bias = this->use_bias, in_features = this->in_features,
+         out_features = this->out_features](const Tensor &grad) {
             if (input_tensor->get_require_grad()) {
                 Tensor input_grad = TensorImpl::zeros(input_tensor->get_shape());
 
@@ -89,13 +88,11 @@ Tensor Linear::forward(const Tensor &input) {
                         float sum = 0.0f;
 
                         for (int out_feature = 0; out_feature < out_features; ++out_feature) {
-                            const int grad_index =
-                                is_vector_input ? out_feature : batch * out_features + out_feature;
+                            const int grad_index = is_vector_input ? out_feature : batch * out_features + out_feature;
                             sum += grad->at(grad_index) * weight->at(out_feature * in_features + in_feature);
                         }
 
-                        const int input_index =
-                            is_vector_input ? in_feature : batch * in_features + in_feature;
+                        const int input_index = is_vector_input ? in_feature : batch * in_features + in_feature;
                         input_grad->at(input_index) = sum;
                     }
                 }
@@ -111,10 +108,8 @@ Tensor Linear::forward(const Tensor &input) {
                         float sum = 0.0f;
 
                         for (int batch = 0; batch < batch_size; ++batch) {
-                            const int grad_index =
-                                is_vector_input ? out_feature : batch * out_features + out_feature;
-                            const int input_index =
-                                is_vector_input ? in_feature : batch * in_features + in_feature;
+                            const int grad_index = is_vector_input ? out_feature : batch * out_features + out_feature;
+                            const int input_index = is_vector_input ? in_feature : batch * in_features + in_feature;
                             sum += grad->at(grad_index) * input_tensor->at(input_index);
                         }
 
@@ -132,8 +127,7 @@ Tensor Linear::forward(const Tensor &input) {
                     float sum = 0.0f;
 
                     for (int batch = 0; batch < batch_size; ++batch) {
-                        const int grad_index =
-                            is_vector_input ? out_feature : batch * out_features + out_feature;
+                        const int grad_index = is_vector_input ? out_feature : batch * out_features + out_feature;
                         sum += grad->at(grad_index);
                     }
 

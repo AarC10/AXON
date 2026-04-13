@@ -11,8 +11,7 @@ class SGDWithMomentum : public Optimizer {
      * @param learning_rate Per-step learning rate
      * @param momentum Momentum coefficient
      */
-    SGDWithMomentum(std::vector<Tensor> parameters, float learning_rate = 1e-3f,
-                    float momentum = 0.9f);
+    SGDWithMomentum(std::vector<Tensor> parameters, float learning_rate = 1e-3f, float momentum = 0.9f);
 
     /** @brief Performs one optimization step */
     void step() override;

@@ -26,7 +26,7 @@ Tensor MSELoss::forward(const Tensor &prediction, const Tensor &target) {
 
     if (loss->get_require_grad()) {
         loss->set_gradient_func(
-            [prediction, target, elementCount](const Tensor& grad) {
+            [prediction, target, elementCount](const Tensor &grad) {
                 const float upstream = grad->at(0);
                 const float scale = (2.0f * upstream) / static_cast<float>(elementCount);
 
@@ -35,7 +35,8 @@ Tensor MSELoss::forward(const Tensor &prediction, const Tensor &target) {
                     for (int i = 0; i < elementCount; ++i) {
                         prediction_grad->at(i) = scale * (prediction->at(i) - target->at(i));
                     }
-                    prediction->grad() = prediction->has_grad() ? prediction->grad() + prediction_grad : prediction_grad;
+                    prediction->grad() =
+                        prediction->has_grad() ? prediction->grad() + prediction_grad : prediction_grad;
                 }
 
                 if (target->get_require_grad()) {
