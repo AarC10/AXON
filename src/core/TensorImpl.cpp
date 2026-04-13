@@ -3,12 +3,12 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <iostream>
 #include <random>
 #include <stdexcept>
 #include <string>
-#include <iostream>
 
-Tensor TensorImpl::from_data(const std::vector<float> &data, const std::vector<int> &shape, bool require_grad) {
+Tensor TensorImpl::from_data(const std::vector<float>& data, const std::vector<int>& shape, bool require_grad) {
     return Tensor(new TensorImpl(data, shape, require_grad));
 }
 
@@ -81,9 +81,7 @@ Tensor TensorImpl::arange(float start, float stop, float step, bool require_grad
     return tensor;
 }
 
-Tensor TensorImpl::copy(const Tensor &other) {
-    return Tensor(new TensorImpl(*other));
-}
+Tensor TensorImpl::copy(const Tensor& other) { return Tensor(new TensorImpl(*other)); }
 
 const std::vector<int>& TensorImpl::get_shape() const { return shape; }
 
@@ -498,10 +496,10 @@ Tensor matmul(const Tensor& lhs, const Tensor& rhs) {
                 sum += lhs->at(lhs_index) * rhs->at(rhs_index);
             }
 
-            const int out_index = (lhs_dims == 1 && rhs_dims == 1) ? 0 :
-                                  (lhs_dims == 1 && rhs_dims == 2) ? col :
-                                  (lhs_dims == 2 && rhs_dims == 1) ? row :
-                                  row * rhs_cols + col;
+            const int out_index = (lhs_dims == 1 && rhs_dims == 1)   ? 0
+                                  : (lhs_dims == 1 && rhs_dims == 2) ? col
+                                  : (lhs_dims == 2 && rhs_dims == 1) ? row
+                                                                     : row * rhs_cols + col;
             out->at(out_index) = sum;
         }
     }
@@ -517,10 +515,10 @@ Tensor matmul(const Tensor& lhs, const Tensor& rhs) {
                     for (int k = 0; k < lhs_cols; ++k) {
                         float sum = 0.0f;
                         for (int col = 0; col < rhs_cols; ++col) {
-                            const int grad_index = (lhs_dims == 1 && rhs_dims == 1) ? 0 :
-                                                   (lhs_dims == 1 && rhs_dims == 2) ? col :
-                                                   (lhs_dims == 2 && rhs_dims == 1) ? row :
-                                                   row * rhs_cols + col;
+                            const int grad_index = (lhs_dims == 1 && rhs_dims == 1)   ? 0
+                                                   : (lhs_dims == 1 && rhs_dims == 2) ? col
+                                                   : (lhs_dims == 2 && rhs_dims == 1) ? row
+                                                                                      : row * rhs_cols + col;
                             const int rhs_index = rhs_dims == 1 ? k : k * rhs_cols + col;
                             sum += grad->at(grad_index) * rhs->at(rhs_index);
                         }
@@ -543,10 +541,10 @@ Tensor matmul(const Tensor& lhs, const Tensor& rhs) {
                         float sum = 0.0f;
                         for (int row = 0; row < lhs_rows; ++row) {
                             const int lhs_index = lhs_dims == 1 ? k : row * lhs_cols + k;
-                            const int grad_index = (lhs_dims == 1 && rhs_dims == 1) ? 0 :
-                                                   (lhs_dims == 1 && rhs_dims == 2) ? col :
-                                                   (lhs_dims == 2 && rhs_dims == 1) ? row :
-                                                   row * rhs_cols + col;
+                            const int grad_index = (lhs_dims == 1 && rhs_dims == 1)   ? 0
+                                                   : (lhs_dims == 1 && rhs_dims == 2) ? col
+                                                   : (lhs_dims == 2 && rhs_dims == 1) ? row
+                                                                                      : row * rhs_cols + col;
                             sum += lhs->at(lhs_index) * grad->at(grad_index);
                         }
 
@@ -599,19 +597,12 @@ Tensor operator>=(const ConstTensor& lhs, const ConstTensor& rhs) {
     return out;
 }
 
-
 // TODO: Matt
-Tensor& TensorImpl::grad() {
-    return gradient;
-}
+Tensor& TensorImpl::grad() { return gradient; }
 
-bool TensorImpl::has_grad() const {
-    return gradient != nullptr;
-}
+bool TensorImpl::has_grad() const { return gradient != nullptr; }
 
-void TensorImpl::zero_grad() {
-    gradient = nullptr;
-}
+void TensorImpl::zero_grad() { gradient = nullptr; }
 
 void TensorImpl::backward() {
     if (require_grad) {
@@ -634,7 +625,8 @@ void TensorImpl::backward() {
         // Increment dependency counter for all inputs
         for (const auto& input_tensor : tensor.inputs) {
             input_tensor->backprop_dep_count += 1;
-            if (std::find(computation_tensors.begin(), computation_tensors.end(), input_tensor) == computation_tensors.end()) {
+            if (std::find(computation_tensors.begin(), computation_tensors.end(), input_tensor) ==
+                computation_tensors.end()) {
                 // This tensor hasn't been seen before, so it needs to be tracked
                 computation_tensors.push_back(input_tensor);
             }
@@ -716,7 +708,8 @@ TensorImpl::TensorImpl(const TensorImpl& other)
 TensorImpl::TensorImpl(TensorImpl&& other)
     : storage(std::move(other.storage)), offset(other.offset), shape(std::move(other.shape)),
       strides(std::move(other.strides)), require_grad(other.require_grad), is_leaf(other.is_leaf),
-      gradient(std::move(other.gradient)), inputs(std::move(other.inputs)), gradient_func(std::move(other.gradient_func)) {}
+      gradient(std::move(other.gradient)), inputs(std::move(other.inputs)),
+      gradient_func(std::move(other.gradient_func)) {}
 
 int TensorImpl::flat_index(const std::vector<int>& idx) const {
     if (idx.size() != shape.size()) {

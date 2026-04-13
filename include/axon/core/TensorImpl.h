@@ -162,7 +162,7 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
      * @param idx Flat element index
      * @return Mutable reference to the addressed element
      */
-    float& at(int idx);
+    float &at(int idx);
     // ==================================
     // ======= Shape Manipulation =======
     // ==================================
@@ -175,71 +175,71 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
     Tensor binary_op(const ConstTensor &rhs, Operation op) const;
 
     /** @brief Elementwise tensor addition */
-    friend Tensor operator+(const Tensor& lhs, const Tensor& rhs);
+    friend Tensor operator+(const Tensor &lhs, const Tensor &rhs);
 
     /** @brief Elementwise tensor subtraction */
-    friend Tensor operator-(const Tensor& lhs, const Tensor& rhs);
+    friend Tensor operator-(const Tensor &lhs, const Tensor &rhs);
 
     /** @brief Elementwise tensor multiplication */
-    friend Tensor operator*(const Tensor& lhs, const Tensor& rhs);
+    friend Tensor operator*(const Tensor &lhs, const Tensor &rhs);
 
     /** @brief Elementwise tensor division */
-    friend Tensor operator/(const Tensor& lhs, const Tensor& rhs);
+    friend Tensor operator/(const Tensor &lhs, const Tensor &rhs);
 
     /** @brief Elementwise unary negation */
-    friend Tensor operator-(const Tensor& tensor);
+    friend Tensor operator-(const Tensor &tensor);
 
     /** @brief Adds a scalar to every element */
-    friend Tensor operator+(const Tensor& tensor, float scalar);
+    friend Tensor operator+(const Tensor &tensor, float scalar);
 
     /** @brief Subtracts a scalar from every element */
-    friend Tensor operator-(const Tensor& tensor, float scalar);
+    friend Tensor operator-(const Tensor &tensor, float scalar);
 
     /** @brief Multiplies every element by a scalar */
-    friend Tensor operator*(const Tensor& tensor, float scalar);
+    friend Tensor operator*(const Tensor &tensor, float scalar);
 
     /** @brief Divides every element by a scalar */
-    friend Tensor operator/(const Tensor& tensor, float scalar);
+    friend Tensor operator/(const Tensor &tensor, float scalar);
 
     /** @brief In-place elementwise tensor addition */
-    friend Tensor &operator+=(Tensor& lhs, const ConstTensor &rhs);
+    friend Tensor &operator+=(Tensor &lhs, const ConstTensor &rhs);
 
     /** @brief In-place elementwise tensor subtraction */
-    friend Tensor &operator-=(Tensor& lhs, const ConstTensor &rhs);
+    friend Tensor &operator-=(Tensor &lhs, const ConstTensor &rhs);
 
     /** @brief In-place elementwise tensor multiplication */
-    friend Tensor &operator*=(Tensor& lhs, const ConstTensor &rhs);
+    friend Tensor &operator*=(Tensor &lhs, const ConstTensor &rhs);
 
     /** @brief In-place elementwise tensor division */
-    friend Tensor &operator/=(Tensor& lhs, const ConstTensor &rhs);
+    friend Tensor &operator/=(Tensor &lhs, const ConstTensor &rhs);
 
     /** @brief Adds a tensor to a lhs scalar */
-    friend Tensor operator+(float scalar, const Tensor& tensor);
+    friend Tensor operator+(float scalar, const Tensor &tensor);
 
     /** @brief Subtracts a tensor from a lhs scalar   */
-    friend Tensor operator-(float scalar, const Tensor& tensor);
+    friend Tensor operator-(float scalar, const Tensor &tensor);
 
     /** @brief Multiplies a lhs scalar by a tensor */
-    friend Tensor operator*(float scalar, const Tensor& tensor);
+    friend Tensor operator*(float scalar, const Tensor &tensor);
 
     /** @brief Divides a lhs scalar by a tensor */
-    friend Tensor operator/(float scalar, const Tensor& tensor);
+    friend Tensor operator/(float scalar, const Tensor &tensor);
 
     // ==================================
     // ======== Elementwise Math ========
     // ==================================
 
     /** @brief Elementwise exponential */
-    friend Tensor exp(const Tensor& lhs);
+    friend Tensor exp(const Tensor &lhs);
 
     /** @brief Elementwise natural logarithm */
-    friend Tensor log(const Tensor& lhs);
+    friend Tensor log(const Tensor &lhs);
 
     /** @brief Elementwise square root */
-    friend Tensor sqrt(const Tensor& lhs);
+    friend Tensor sqrt(const Tensor &lhs);
 
     /** @brief Elementwise absolute value */
-    friend Tensor abs(const Tensor& lhs);
+    friend Tensor abs(const Tensor &lhs);
 
     /**
      * @brief Raises each element to a scalar exponent
@@ -247,7 +247,7 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
      * @param exponent Scalar exponent
      * @return Result tensor
      */
-    friend Tensor pow(const Tensor& lhs, float exponent);
+    friend Tensor pow(const Tensor &lhs, float exponent);
 
     /**
      * @brief Raises each element to tensor-provided exponents
@@ -255,7 +255,7 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
      * @param exp Elementwise exponents
      * @return Result tensor
      */
-    friend Tensor pow(const Tensor& lhs, const Tensor& exp);
+    friend Tensor pow(const Tensor &lhs, const Tensor &exp);
 
     /**
      * @brief Clamps values to a closed interval
@@ -264,36 +264,36 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
      * @param max Upper bound
      * @return Clipped tensor
      */
-    friend Tensor clip(const Tensor& lhs, float min, float max);
+    friend Tensor clip(const Tensor &lhs, float min, float max);
 
     // ==================================
     // ====== Comparison Operations =====
     // ==================================
 
     /** @brief Elementwise equality comparison */
-    friend Tensor operator==(const ConstTensor& lhs, const ConstTensor &rhs);
+    friend Tensor operator==(const ConstTensor &lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise inequality comparison */
-    friend Tensor operator!=(const ConstTensor& lhs, const ConstTensor &rhs);
+    friend Tensor operator!=(const ConstTensor &lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise LT comparison */
-    friend Tensor operator<(const ConstTensor& lhs, const ConstTensor &rhs);
+    friend Tensor operator<(const ConstTensor &lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise LTE comparison */
-    friend Tensor operator<=(const ConstTensor& lhs, const ConstTensor &rhs);
+    friend Tensor operator<=(const ConstTensor &lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise GT comparison */
-    friend Tensor operator>(const ConstTensor& lhs, const ConstTensor &rhs);
+    friend Tensor operator>(const ConstTensor &lhs, const ConstTensor &rhs);
 
     /** @brief Elementwise GTE comparison */
-    friend Tensor operator>=(const ConstTensor& lhs, const ConstTensor &rhs);
+    friend Tensor operator>=(const ConstTensor &lhs, const ConstTensor &rhs);
 
     // ==================================
     // ====== Activation Functions ======
     // ==================================
 
     /** @brief Matrix multiplication for 1D/2D tensors */
-    friend Tensor matmul(const Tensor& lhs, const Tensor& rhs);
+    friend Tensor matmul(const Tensor &lhs, const Tensor &rhs);
 
     // ==================================
     // ====== Reduction Operations ======
@@ -337,7 +337,7 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
     // ======== Autograd Handling ========
     // ==================================
 
-    using GradientFunc = std::function<void(const Tensor&)>;
+    using GradientFunc = std::function<void(const Tensor &)>;
 
     void set_gradient_func(GradientFunc func, const std::vector<Tensor> &inputs);
 
@@ -421,6 +421,5 @@ class TensorImpl : public std::enable_shared_from_this<TensorImpl> {
 };
 
 #include "core/TensorImpl.tpp"
-
 
 #endif // AXON_TENSOR_H

@@ -1,27 +1,16 @@
-#include "nn/Module.h"
+#include "nn/Serialization.h"
 
-#include <cstring>
 #include <fstream>
 #include <stdexcept>
-#include <vector>
 
-std::vector<Tensor> Module::parameters() { return {}; }
+namespace axon {
 
-void Module::zero_grad() {
-    for (const Tensor &parameter : parameters()) {
-        if (parameter) {
-            parameter->zero_grad();
-        }
-    }
-}
-
-void Module::save(const std::string &path) {
+void save(const std::vector<Tensor> &params, const std::string &path) {
     std::ofstream out(path, std::ios::binary);
     if (!out) {
         throw std::runtime_error("Failed to open file for writing: " + path);
     }
 
-    auto params = parameters();
     int num_params = static_cast<int>(params.size());
     out.write(reinterpret_cast<const char *>(&num_params), sizeof(num_params));
 
@@ -36,13 +25,11 @@ void Module::save(const std::string &path) {
     }
 }
 
-void Module::load(const std::string &path) {
+void load(std::vector<Tensor> &params, const std::string &path) {
     std::ifstream in(path, std::ios::binary);
     if (!in) {
         throw std::runtime_error("Failed to open file for reading: " + path);
     }
-
-    auto params = parameters();
 
     int num_params = 0;
     in.read(reinterpret_cast<char *>(&num_params), sizeof(num_params));
@@ -66,3 +53,5 @@ void Module::load(const std::string &path) {
         in.read(reinterpret_cast<char *>(param->data()), nelem * sizeof(float));
     }
 }
+
+} // namespace axon

@@ -3,6 +3,7 @@
 #include "loss/CrossEntropyLoss.h"
 #include "nn/Linear.h"
 #include "nn/activations/ReLU.h"
+#include "nn/Serialization.h"
 #include "optimizers/Adam.h"
 
 #include <iostream>
@@ -128,6 +129,26 @@ int main(int argc, char **argv) {
 
     float test_acc = calculate_accuracy(layer1, relu, layer2, X_test, y_test);
     std::cout << "Test accuracy: " << test_acc << "%" << std::endl;
+
+    std::string weights_path = "iris_model.bin";
+    axon::save(params, weights_path);
+    std::cout << "Saved model to " << weights_path << std::endl;
+
+    Linear layer1_loaded(cols, hidden_layer_size);
+    Linear layer2_loaded(hidden_layer_size, 3);
+
+    std::vector<Tensor> loaded_params;
+    auto l1_lp = layer1_loaded.parameters();
+    auto l2_lp = layer2_loaded.parameters();
+    loaded_params.insert(loaded_params.end(), l1_lp.begin(), l1_lp.end());
+    loaded_params.insert(loaded_params.end(), l2_lp.begin(), l2_lp.end());
+
+    axon::load(loaded_params, weights_path);
+    std::cout << "Loaded model from " << weights_path << std::endl;
+
+    ReLU relu_loaded;
+    float loaded_test_acc = calculate_accuracy(layer1_loaded, relu_loaded, layer2_loaded, X_test, y_test);
+    std::cout << "Loaded model test accuracy: " << loaded_test_acc << "%" << std::endl;
 
     return 0;
 }

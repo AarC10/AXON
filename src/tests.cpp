@@ -22,13 +22,13 @@ using Clock = std::chrono::steady_clock;
 
 bool approx_equal(float a, float b, float eps = 1e-5f) { return std::fabs(a - b) <= eps; }
 
-void require_true(bool condition, const std::string& message) {
+void require_true(bool condition, const std::string &message) {
     if (!condition) {
         throw std::runtime_error(message);
     }
 }
 
-void require_close(float actual, float expected, const std::string& message, float eps = 1e-5f) {
+void require_close(float actual, float expected, const std::string &message, float eps = 1e-5f) {
     if (!approx_equal(actual, expected, eps)) {
         throw std::runtime_error(message);
     }

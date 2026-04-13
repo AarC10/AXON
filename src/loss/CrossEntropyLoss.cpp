@@ -51,7 +51,7 @@ Tensor CrossEntropyLoss::forward(const Tensor &prediction, const Tensor &target)
 
     if (prediction->get_require_grad()) {
         loss->set_gradient_func(
-            [prediction, target, batchSize, classCount](const Tensor& grad) {
+            [prediction, target, batchSize, classCount](const Tensor &grad) {
                 const float upstream = grad->at(0);
                 Tensor prediction_grad = TensorImpl::zeros(prediction->get_shape());
 
@@ -79,8 +79,7 @@ Tensor CrossEntropyLoss::forward(const Tensor &prediction, const Tensor &target)
                     }
                 }
 
-                prediction->grad() =
-                    prediction->has_grad() ? prediction->grad() + prediction_grad : prediction_grad;
+                prediction->grad() = prediction->has_grad() ? prediction->grad() + prediction_grad : prediction_grad;
             },
             {prediction});
     }

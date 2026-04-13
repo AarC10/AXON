@@ -1,7 +1,6 @@
 #include "optimizers/RMSProp.h"
 
-RMSProp::RMSProp(std::vector<Tensor> parameters, const float learning_rate, const float decay_rate,
-                 const float epsilon)
+RMSProp::RMSProp(std::vector<Tensor> parameters, const float learning_rate, const float decay_rate, const float epsilon)
     : Optimizer(std::move(parameters)), learningRate(learning_rate), decayRate(decay_rate), epsilonValue(epsilon) {
     squaredGradientAvg.reserve(trackedParameters.size());
     for (const auto& parameter : trackedParameters) {
