@@ -7,6 +7,48 @@
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
+
+namespace {
+
+Tensor reduce_gradient_to_shape(const Tensor& gradient, const std::vector<int>& target_shape) {
+    if (gradient->get_shape() == target_shape) {
+        return gradient;
+    }
+
+    Tensor reduced = TensorImpl::zeros(target_shape);
+    const std::vector<int>& grad_shape = gradient->get_shape();
+    const int grad_ndim = static_cast<int>(grad_shape.size());
+    const int target_ndim = static_cast<int>(target_shape.size());
+
+    for (int flat = 0; flat < gradient->nelem(); ++flat) {
+        int remaining = flat;
+        std::vector<int> grad_index(grad_ndim, 0);
+
+        for (int dim = grad_ndim - 1; dim >= 0; --dim) {
+            grad_index[dim] = remaining % grad_shape[dim];
+            remaining /= grad_shape[dim];
+        }
+
+        std::vector<int> target_index(target_ndim, 0);
+        const int dim_offset = grad_ndim - target_ndim;
+
+        for (int dim = 0; dim < target_ndim; ++dim) {
+            target_index[dim] = target_shape[dim] == 1 ? 0 : grad_index[dim + dim_offset];
+        }
+
+        reduced->at(target_index) += gradient->at(flat);
+    }
+
+    return reduced;
+}
+
+void accumulate_gradient(const Tensor& target, const Tensor& contribution) {
+    Tensor reduced = reduce_gradient_to_shape(contribution, target->get_shape());
+    target->grad() = target->has_grad() ? target->grad() + reduced : reduced;
+}
+
+} // namespace
 
 Tensor TensorImpl::from_data(const std::vector<float>& data, const std::vector<int>& shape, bool require_grad) {
     return Tensor(new TensorImpl(data, shape, require_grad));
@@ -81,7 +123,14 @@ Tensor TensorImpl::arange(float start, float stop, float step, bool require_grad
     return tensor;
 }
 
-Tensor TensorImpl::copy(const Tensor& other) { return Tensor(new TensorImpl(*other)); }
+Tensor TensorImpl::copy(const Tensor& other) {
+    std::vector<float> copied_data(other->nelem());
+    for (int i = 0; i < other->nelem(); ++i) {
+        copied_data[i] = other->at(i);
+    }
+
+    return Tensor(new TensorImpl(copied_data, other->get_shape(), other->get_require_grad()));
+}
 
 const std::vector<int>& TensorImpl::get_shape() const { return shape; }
 
@@ -146,11 +195,11 @@ Tensor operator+(const Tensor& lhs, const Tensor& rhs) {
         out->gradient_func = [lhs, rhs](const Tensor& grad) {
             // Adding should pass grad straight through both sides
             if (lhs->require_grad) {
-                lhs->gradient = lhs->gradient ? lhs->gradient + grad : grad;
+                accumulate_gradient(lhs, grad);
             }
 
             if (rhs->require_grad) {
-                rhs->gradient = rhs->gradient ? rhs->gradient + grad : grad;
+                accumulate_gradient(rhs, grad);
             }
         };
     }
@@ -167,13 +216,13 @@ Tensor operator-(const Tensor& lhs, const Tensor& rhs) {
         out->gradient_func = [lhs, rhs](const Tensor& grad) {
             // lhs should get +grad
             if (lhs->require_grad) {
-                lhs->gradient = lhs->gradient ? lhs->gradient + grad : grad;
+                accumulate_gradient(lhs, grad);
             }
 
             // rhs gets -grad
             if (rhs->require_grad) {
                 Tensor neg_grad = -grad;
-                rhs->gradient = rhs->gradient ? rhs->gradient + neg_grad : neg_grad;
+                accumulate_gradient(rhs, neg_grad);
             }
         };
     }
@@ -192,11 +241,11 @@ Tensor operator*(const Tensor& lhs, const Tensor& rhs) {
             // d/db (a*b) = a
             if (lhs->require_grad) {
                 Tensor lhs_grad = grad * rhs;
-                lhs->gradient = lhs->gradient ? lhs->gradient + lhs_grad : lhs_grad;
+                accumulate_gradient(lhs, lhs_grad);
             }
             if (rhs->require_grad) {
                 Tensor rhs_grad = grad * lhs;
-                rhs->gradient = rhs->gradient ? rhs->gradient + rhs_grad : rhs_grad;
+                accumulate_gradient(rhs, rhs_grad);
             }
         };
     }
@@ -215,11 +264,11 @@ Tensor operator/(const Tensor& lhs, const Tensor& rhs) {
             // d/db (a/b) = -a/b^2
             if (lhs->require_grad) {
                 Tensor lhs_grad = grad / rhs;
-                lhs->gradient = lhs->gradient ? lhs->gradient + lhs_grad : lhs_grad;
+                accumulate_gradient(lhs, lhs_grad);
             }
             if (rhs->require_grad) {
                 Tensor rhs_grad = grad * (lhs * -1.0f) / (rhs * rhs);
-                rhs->gradient = rhs->gradient ? rhs->gradient + rhs_grad : rhs_grad;
+                accumulate_gradient(rhs, rhs_grad);
             }
         };
     }
@@ -605,56 +654,43 @@ bool TensorImpl::has_grad() const { return gradient != nullptr; }
 void TensorImpl::zero_grad() { gradient = nullptr; }
 
 void TensorImpl::backward() {
-    if (require_grad) {
-        gradient = TensorImpl::ones(shape);
-    } else {
+    if (!require_grad) {
         return;
     }
 
-    // If there are no inputs, there can be no backpropagation
-    if (inputs.size() == 0) {
-        return;
-    }
+    std::vector<Tensor> topological_order;
+    std::unordered_set<TensorImpl*> visited;
 
-    // Build dependency count
-    std::vector<Tensor> computation_tensors = inputs;
+    std::function<void(const Tensor&)> build_topology = [&](const Tensor& tensor) {
+        if (!tensor || !visited.insert(tensor.get()).second) {
+            return;
+        }
 
-    for (int i = 0; i < computation_tensors.size(); ++i) {
-        TensorImpl& tensor = *computation_tensors[i];
+        for (const Tensor& input : tensor->inputs) {
+            build_topology(input);
+        }
 
-        // Increment dependency counter for all inputs
-        for (const auto& input_tensor : tensor.inputs) {
-            input_tensor->backprop_dep_count += 1;
-            if (std::find(computation_tensors.begin(), computation_tensors.end(), input_tensor) ==
-                computation_tensors.end()) {
-                // This tensor hasn't been seen before, so it needs to be tracked
-                computation_tensors.push_back(input_tensor);
-            }
+        topological_order.push_back(tensor);
+    };
+
+    build_topology(shared_from_this());
+
+    for (const Tensor& tensor : topological_order) {
+        tensor->backprop_dep_count = 0;
+        if (!tensor->is_leaf) {
+            tensor->gradient = nullptr;
         }
     }
 
-    // Calculate gradients
-    gradient_func(gradient);
-    while (!computation_tensors.empty()) {
-        auto tensor = computation_tensors.front();
-        computation_tensors.erase(computation_tensors.begin());
+    gradient = TensorImpl::ones(shape);
 
-        // If still waiting for dependencies, skip this
-        if (tensor->backprop_dep_count != 0) {
-            computation_tensors.push_back(tensor);
+    for (auto it = topological_order.rbegin(); it != topological_order.rend(); ++it) {
+        const Tensor& tensor = *it;
+        if (!tensor->gradient_func || !tensor->gradient) {
             continue;
         }
 
-        // If the tensor is a leaf, there are no more upstream gradients to compute
-        if (tensor->is_leaf) {
-            continue;
-        }
-
-        // Calculate inputs' gradients and decrement dependency counts
         tensor->gradient_func(tensor->gradient);
-        for (auto input : tensor->inputs) {
-            input->backprop_dep_count -= 1;
-        }
     }
 }
 
@@ -701,9 +737,13 @@ TensorImpl::TensorImpl(const std::vector<float>& data, const std::vector<int>& s
 }
 
 TensorImpl::TensorImpl(const TensorImpl& other)
-    : storage(std::make_shared<std::vector<float>>(*other.storage)), offset(other.offset), shape(other.shape),
-      strides(other.strides), require_grad(other.require_grad), is_leaf(other.is_leaf), gradient(other.gradient),
-      inputs(other.inputs), gradient_func(other.gradient_func) {}
+    : offset(0), shape(other.shape), require_grad(other.require_grad), is_leaf(true), backprop_dep_count(0) {
+    storage = std::make_shared<std::vector<float>>(other.nelem(), 0.0f);
+    for (int i = 0; i < other.nelem(); ++i) {
+        (*storage)[i] = other.at(i);
+    }
+    compute_strides();
+}
 
 TensorImpl::TensorImpl(TensorImpl&& other)
     : storage(std::move(other.storage)), offset(other.offset), shape(std::move(other.shape)),
