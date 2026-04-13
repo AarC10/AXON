@@ -19,7 +19,7 @@ Components:
 - `CSVLoader`: CSV dataset loader
 - `Serialization`: save/load parameter tensors
 
-build targets:
+Build Targets:
 - `axon_test`: C++ test binary
 - `iris_training`: C++ Iris example
 - `axon`: Python extension module when Python bindings are enabled
@@ -40,8 +40,7 @@ Notes:
 
 ## Build
 
-### Standard CMake build
-
+## CMake
 Configure:
 
 ```bash
@@ -119,7 +118,7 @@ make iris_training
 
 This trains a small classifier, prints training progress, reports train/test accuracy, and writes model weights to `iris_model.bin`.
 
-### Run the Python Iris example
+### Python Iris example
 
 Build first, then run:
 
