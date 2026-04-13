@@ -51,6 +51,7 @@ add_library(AXON::axon ALIAS axon)
 target_link_libraries(axon INTERFACE core data nn optimizers loss)
 target_include_directories(axon INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/axon)
 
-# Below is temporary for now
-add_executable(axon_test src/main.cpp)
+add_executable(axon_test src/tests.cpp)
 target_link_libraries(axon_test PRIVATE axon)
+
+add_subdirectory(examples)
