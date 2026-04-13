@@ -456,11 +456,8 @@ void test_cross_entropy_loss_backward() {
     require_close(logits->grad()->at(2), std::exp(0.1f) / denom, "unexpected CE gradient for logits[2]", 1e-4f);
 }
 
-void test_training(const std::string &path) {
-    auto [X, y] = axon::data::load_csv(path, 5);
-    int rows = X->size(0);
-    int cols = X->size(1);
-
+std::pair<std::vector<int>, std::vector<int>> split_train_test_indices(const Tensor& y, float split_ratio = 0.8f) {
+    int rows = y->size(0);
     std::map<int, std::vector<int>> class_indices;
     for (int i = 0; i < rows; ++i) {
         int label = static_cast<int>(y->at({i, 0}));
@@ -470,7 +467,7 @@ void test_training(const std::string &path) {
     std::vector<int> train_idx;
     std::vector<int> test_idx;
     for (const auto &[label, indices] : class_indices) {
-        int train_size = static_cast<int>(indices.size() * 0.8f);
+        int train_size = static_cast<int>(indices.size() * split_ratio);
         for (int i = 0; i < indices.size(); ++i) {
             if (i < train_size) {
                 train_idx.push_back(indices[i]);
@@ -479,24 +476,56 @@ void test_training(const std::string &path) {
             }
         }
     }
+    return {train_idx, test_idx};
+}
 
-    auto make_subset = [&](const std::vector<int> &indices, const Tensor &features, const Tensor &labels) {
-        int n = indices.size();
-        std::vector<float> f_data(n * cols);
-        std::vector<float> l_data(n);
-        for (int i = 0; i < n; ++i) {
-            int row = indices[i];
-            for (int c = 0; c < cols; ++c) {
-                f_data[i * cols + c] = features->at({row, c});
-            }
-            l_data[i] = labels->at({row, 0});
+std::pair<Tensor, Tensor> create_subset(const std::vector<int>& indices, const Tensor& features, const Tensor& labels) {
+    int n = indices.size();
+    int cols = features->size(1);
+    std::vector<float> f_data(n * cols);
+    std::vector<float> l_data(n);
+    for (int i = 0; i < n; ++i) {
+        int row = indices[i];
+        for (int c = 0; c < cols; ++c) {
+            f_data[i * cols + c] = features->at({row, c});
         }
-        return std::make_pair(TensorImpl::from_data(f_data, {n, cols}, true), TensorImpl::from_data(l_data, {n}));
-    };
+        l_data[i] = labels->at({row, 0});
+    }
+    return std::make_pair(TensorImpl::from_data(f_data, {n, cols}, true), TensorImpl::from_data(l_data, {n}));
+}
 
-    auto [X_train, y_train] = make_subset(train_idx, X, y);
-    auto [X_test, y_test] = make_subset(test_idx, X, y);
+float calculate_accuracy(Linear& layer1, ReLU& relu, Linear& layer2, const Tensor& X, const Tensor& y) {
+    Tensor h1 = layer1.forward(X);
+    Tensor a1 = relu.forward(h1);
+    Tensor logits = layer2.forward(a1);
 
+    int correct = 0;
+    int n = X->size(0);
+    for (int i = 0; i < n; ++i) {
+        float max_logit = -1e9f;
+        int best_class = -1;
+        for (int c = 0; c < 3; ++c) {
+            float val = logits->at({i, c});
+            if (val > max_logit) {
+                max_logit = val;
+                best_class = c;
+            }
+        }
+        if (best_class == static_cast<int>(y->at({i}))) {
+            correct++;
+        }
+    }
+    return correct * 100.0f / n;
+}
+
+void test_training(const std::string &path) {
+    auto [X, y] = axon::data::load_csv(path, 5);
+    
+    auto [train_idx, test_idx] = split_train_test_indices(y, 0.8f);
+    auto [X_train, y_train] = create_subset(train_idx, X, y);
+    auto [X_test, y_test] = create_subset(test_idx, X, y);
+
+    int cols = X->size(1);
     int hidden_layer_size = 32;
 
     Linear layer1(cols, hidden_layer_size);
@@ -526,49 +555,11 @@ void test_training(const std::string &path) {
         optimizer.step();
     }
 
-    Tensor h1_train = layer1.forward(X_train);
-    Tensor a1_train = relu.forward(h1_train);
-    Tensor logits_train = layer2.forward(a1_train);
+    float train_acc = calculate_accuracy(layer1, relu, layer2, X_train, y_train);
+    std::cout << "Train accuracy: " << train_acc << "%" << std::endl;
 
-    int correct_train = 0;
-    int train_n = X_train->size(0);
-    for (int i = 0; i < train_n; ++i) {
-        float max_logit = -1e9f;
-        int best_class = -1;
-        for (int c = 0; c < 3; ++c) {
-            float val = logits_train->at({i, c});
-            if (val > max_logit) {
-                max_logit = val;
-                best_class = c;
-            }
-        }
-        if (best_class == static_cast<int>(y_train->at({i}))) {
-            correct_train++;
-        }
-    }
-    std::cout << "Train accuracy: " << (correct_train * 100.0f / train_n) << "%" << std::endl;
-
-    Tensor h1_test = layer1.forward(X_test);
-    Tensor a1_test = relu.forward(h1_test);
-    Tensor logits_test = layer2.forward(a1_test);
-
-    int correct_test = 0;
-    int test_n = X_test->size(0);
-    for (int i = 0; i < test_n; ++i) {
-        float max_logit = -1e9f;
-        int best_class = -1;
-        for (int c = 0; c < 3; ++c) {
-            float val = logits_test->at({i, c});
-            if (val > max_logit) {
-                max_logit = val;
-                best_class = c;
-            }
-        }
-        if (best_class == static_cast<int>(y_test->at({i}))) {
-            correct_test++;
-        }
-    }
-    std::cout << "Test accuracy: " << (correct_test * 100.0f / test_n) << "%" << std::endl;
+    float test_acc = calculate_accuracy(layer1, relu, layer2, X_test, y_test);
+    std::cout << "Test accuracy: " << test_acc << "%" << std::endl;
 }
 
 } // namespace
