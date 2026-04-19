@@ -1,0 +1,2 @@
+add_executable(mnist_training main.cpp)
+target_link_libraries(mnist_training PRIVATE axon)
