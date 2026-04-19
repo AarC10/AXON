@@ -91,7 +91,12 @@ def main():
     optimizer = axon.Adam(params, lr=0.01)
     criterion = axon.CrossEntropyLoss()
 
-    for epoch in range(400):
+    num_epochs = 400
+    losses = []
+    train_accs = []
+    test_accs = []
+
+    for epoch in range(num_epochs):
         h1 = layer1.forward(X_train)
         a1 = relu.forward(h1)
         logits = layer2.forward(a1)
@@ -104,13 +109,47 @@ def main():
         loss.backward()
         optimizer.step()
 
-        if (epoch + 1) % 50 == 0:
-            print(f"Epoch {epoch + 1:3d}  Loss: {loss.item():.6f}")
+        losses.append(loss.item())
+        train_accs.append(calculate_accuracy(layer1, relu, layer2, X_train, y_train))
+        test_accs.append(calculate_accuracy(layer1, relu, layer2, X_test, y_test))
 
-    train_acc = calculate_accuracy(layer1, relu, layer2, X_train, y_train)
-    test_acc = calculate_accuracy(layer1, relu, layer2, X_test, y_test)
+        if (epoch + 1) % 50 == 0:
+            print(f"Epoch {epoch + 1:3d}  Loss: {losses[-1]:.6f}  "
+                  f"Train: {train_accs[-1]:.1f}%  Test: {test_accs[-1]:.1f}%")
+
+    train_acc = train_accs[-1]
+    test_acc = test_accs[-1]
     print(f"Train accuracy: {train_acc:.1f}%")
     print(f"Test accuracy:  {test_acc:.1f}%")
+
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        print("matplotlib not installed; skipping plots")
+    else:
+        epochs = range(1, num_epochs + 1)
+        fig, (ax_loss, ax_acc) = plt.subplots(1, 2, figsize=(12, 4))
+
+        ax_loss.plot(epochs, losses, color="tab:red")
+        ax_loss.set_xlabel("Epoch")
+        ax_loss.set_ylabel("Loss")
+        ax_loss.set_title("Training Loss")
+        ax_loss.grid(True, alpha=0.3)
+
+        ax_acc.plot(epochs, train_accs, label="Train", color="tab:blue")
+        ax_acc.plot(epochs, test_accs, label="Test", color="tab:green")
+        ax_acc.set_xlabel("Epoch")
+        ax_acc.set_ylabel("Accuracy (%)")
+        ax_acc.set_title("Accuracy")
+        ax_acc.set_ylim(0, 105)
+        ax_acc.legend()
+        ax_acc.grid(True, alpha=0.3)
+
+        fig.tight_layout()
+        out_path = "iris_curves.png"
+        fig.savefig(out_path, dpi=120)
+        print(f"Saved curves to {out_path}")
+        plt.show()
 
     axon.save(params, "iris_model.bin")
     print("Saved model to iris_model.bin")

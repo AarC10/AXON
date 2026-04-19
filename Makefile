@@ -1,7 +1,7 @@
 BUILD_DIR  := build
 CMAKE_OPTS := -DCMAKE_BUILD_TYPE=Release
 
-.PHONY: all configure build tests examples iris_training clean
+.PHONY: all configure build tests examples iris_training mnist_training clean
 
 all: build
 
@@ -17,7 +17,10 @@ tests: build
 examples: build
 
 iris_training: build
-	./$(BUILD_DIR)/examples/iris_training/iris_training examples/Iris.csv
+	./$(BUILD_DIR)/examples/iris_training/iris_training examples/data/Iris.csv
+
+mnist_training: build
+	./$(BUILD_DIR)/examples/mnist_training/mnist_training examples/data/mnist_train.csv examples/data/mnist_test.csv
 
 clean:
 	rm -rf $(BUILD_DIR)

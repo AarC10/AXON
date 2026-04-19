@@ -1,1 +1,2 @@
 add_subdirectory(iris_training)
+add_subdirectory(mnist_training)

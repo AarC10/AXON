@@ -13,6 +13,13 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
+if(NOT MSVC)
+  add_compile_options(
+    "$<$<CONFIG:Release>:-march=native>"
+    "$<$<CONFIG:Release>:-ffast-math>"
+  )
+endif()
+
 # Options
 option(AXON_BUILD_PYTHON  "Build pybind11 Python extension" ON)
 option(AXON_ENABLE_OPENMP "Enable OpenMP parallelism" ON)
