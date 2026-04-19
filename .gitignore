@@ -44,3 +44,6 @@
 
 # Build folder
 build/
+
+# Large dataset files
+examples/data/mnist_train.csv
