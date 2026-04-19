@@ -53,6 +53,7 @@ Tensor Linear::forward(const Tensor &input) {
     Tensor output = TensorImpl::zeros(output_shape, input->get_require_grad() || weight->get_require_grad() ||
                                                         (use_bias && bias_tensor && bias_tensor->get_require_grad()));
 
+#pragma omp parallel for collapse(2) schedule(static)
     for (int batch = 0; batch < batch_size; ++batch) {
         for (int out_feature = 0; out_feature < out_features; ++out_feature) {
             float sum = use_bias ? bias_tensor->at(out_feature) : 0.0f;
@@ -83,6 +84,7 @@ Tensor Linear::forward(const Tensor &input) {
             if (input_tensor->get_require_grad()) {
                 Tensor input_grad = TensorImpl::zeros(input_tensor->get_shape());
 
+#pragma omp parallel for collapse(2) schedule(static)
                 for (int batch = 0; batch < batch_size; ++batch) {
                     for (int in_feature = 0; in_feature < in_features; ++in_feature) {
                         float sum = 0.0f;
@@ -103,6 +105,7 @@ Tensor Linear::forward(const Tensor &input) {
             if (weight->get_require_grad()) {
                 Tensor weight_grad = TensorImpl::zeros(weight->get_shape());
 
+#pragma omp parallel for collapse(2) schedule(static)
                 for (int out_feature = 0; out_feature < out_features; ++out_feature) {
                     for (int in_feature = 0; in_feature < in_features; ++in_feature) {
                         float sum = 0.0f;
@@ -123,6 +126,7 @@ Tensor Linear::forward(const Tensor &input) {
             if (use_bias && bias && bias->get_require_grad()) {
                 Tensor bias_grad = TensorImpl::zeros(bias->get_shape());
 
+#pragma omp parallel for schedule(static)
                 for (int out_feature = 0; out_feature < out_features; ++out_feature) {
                     float sum = 0.0f;
 
