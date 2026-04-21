@@ -111,6 +111,10 @@ def main():
           f"Train accuracy: {initial_train_acc:.2f}%  "
           f"Test loss: {initial_test_loss:.6f}  Test: {initial_test_acc:.2f}%")
 
+    losses.append(initial_train_loss)
+    train_accs.append(initial_train_acc)
+    test_accs.append(initial_test_acc)
+
     training_start = time.perf_counter()
     for epoch in range(num_epochs):
         perm = list(range(train_n))
@@ -158,7 +162,7 @@ def main():
     except ImportError:
         print("matplotlib not installed; skipping plots")
     else:
-        epochs = range(1, num_epochs + 1)
+        epochs = range(0, num_epochs + 1)
         fig, (ax_loss, ax_acc) = plt.subplots(1, 2, figsize=(12, 4))
 
         ax_loss.plot(epochs, losses, color="tab:red")
