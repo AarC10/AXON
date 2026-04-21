@@ -3,6 +3,7 @@
 import os
 import random
 import sys
+import time
 
 build_dir = os.path.join(os.path.dirname(__file__), "..", "..", "build")
 sys.path.insert(0, os.path.abspath(build_dir))
@@ -107,9 +108,10 @@ def main():
     initial_train_acc = calculate_accuracy(layer1, relu, layer2, X_train, y_train)
     initial_test_acc = calculate_accuracy(layer1, relu, layer2, X_test, y_test)
     print(f"Before training  Train loss: {initial_train_loss:.6f}  "
-          f"Train: {initial_train_acc:.2f}%  "
+          f"Train accuracy: {initial_train_acc:.2f}%  "
           f"Test loss: {initial_test_loss:.6f}  Test: {initial_test_acc:.2f}%")
 
+    training_start = time.perf_counter()
     for epoch in range(num_epochs):
         perm = list(range(train_n))
         rng.shuffle(perm)
@@ -146,6 +148,8 @@ def main():
         print(f"Epoch {epoch + 1:2d}  Loss: {avg_loss:.6f}  "
               f"Train: {train_acc:.2f}%  Test: {test_acc:.2f}%")
 
+    training_elapsed = time.perf_counter() - training_start
+    print(f"Training time: {training_elapsed:.3f} seconds")
     print(f"Final train accuracy: {train_accs[-1]:.2f}%")
     print(f"Final test accuracy:  {test_accs[-1]:.2f}%")
 

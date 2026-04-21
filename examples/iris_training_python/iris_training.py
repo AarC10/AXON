@@ -2,6 +2,7 @@
 
 import sys
 import os
+import time
 
 build_dir = os.path.join(os.path.dirname(__file__), "..", "..", "build")
 sys.path.insert(0, os.path.abspath(build_dir))
@@ -111,6 +112,7 @@ def main():
           f"Train: {initial_train_acc:.1f}%  "
           f"Test loss: {initial_test_loss:.6f}  Test: {initial_test_acc:.1f}%")
 
+    training_start = time.perf_counter()
     for epoch in range(num_epochs):
         h1 = layer1.forward(X_train)
         a1 = relu.forward(h1)
@@ -132,6 +134,8 @@ def main():
             print(f"Epoch {epoch + 1:3d}  Loss: {losses[-1]:.6f}  "
                   f"Train: {train_accs[-1]:.1f}%  Test: {test_accs[-1]:.1f}%")
 
+    training_elapsed = time.perf_counter() - training_start
+    print(f"Training time: {training_elapsed:.3f} seconds")
     train_acc = train_accs[-1]
     test_acc = test_accs[-1]
     print(f"Train accuracy: {train_acc:.1f}%")
