@@ -66,6 +66,13 @@ def calculate_accuracy(layer1, relu, layer2, X, y):
     return correct * 100.0 / n
 
 
+def calculate_loss(layer1, relu, layer2, criterion, X, y):
+    h1 = layer1.forward(X)
+    a1 = relu.forward(h1)
+    logits = layer2.forward(a1)
+    return criterion.forward(logits, y).item()
+
+
 def main():
     csv_path = os.path.join(os.path.dirname(__file__), "..", "Iris.csv")
     if len(sys.argv) >= 2:
@@ -95,6 +102,14 @@ def main():
     losses = []
     train_accs = []
     test_accs = []
+
+    initial_train_loss = calculate_loss(layer1, relu, layer2, criterion, X_train, y_train)
+    initial_test_loss = calculate_loss(layer1, relu, layer2, criterion, X_test, y_test)
+    initial_train_acc = calculate_accuracy(layer1, relu, layer2, X_train, y_train)
+    initial_test_acc = calculate_accuracy(layer1, relu, layer2, X_test, y_test)
+    print(f"Before training  Train loss: {initial_train_loss:.6f}  "
+          f"Train: {initial_train_acc:.1f}%  "
+          f"Test loss: {initial_test_loss:.6f}  Test: {initial_test_acc:.1f}%")
 
     for epoch in range(num_epochs):
         h1 = layer1.forward(X_train)
